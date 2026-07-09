@@ -1,0 +1,160 @@
+(*
+  The source file is a sequence of ASCII characters.
+*)
+
+(**
+  Lexical grammar
+**)
+
+<visible_character> ::= (? all printable ASCII codes except space (0x20) ?)
+
+<space> ::= " "
+
+<tab> ::= "\t"
+
+<newline> ::= "\n" | "\r"
+
+<whitespace> ::= <space> | <tab> | <newline>
+
+<character> ::= <visible_character> | <whitespace>
+
+<letter> ::= (? A-Z ?) | (? a-z ?) | "_"
+
+<digit> ::= (? 0-9 ?)
+
+(*
+  Comments
+*)
+
+<single_line_comment> ::= "/" "/" { <character> - <newline> }
+
+<multi_line_comment> ::= "/" "*" { <character> } "*" "/"
+
+<comment> ::= <single_line_comment> | <multi_line_comment>
+
+(*
+  Operators and punctuation symbols
+*)
+
+<operator_and_punctuation> ::= ":" | ";"
+                               | "+" | "-" | "*" | "/" | "%"
+                               | "~" | "&" | "|" | "^" | "<<" | ">>"
+                               | "<" | ">" | "<=" | ">=" | "==" | "!="
+                               | "&&" | "||" | "!"
+                               | "="
+                               | "(" | ")"
+
+(*
+  Keywords
+*)
+
+<keyword> ::= "float"
+              | "fn"
+              | "if"
+              | "int"
+              | "return"
+              | "var"
+              | "while"
+
+(*
+  Identifiers
+*)
+
+<identifier> ::= <letter> { <letter> | <digit> }
+
+(*
+  Constants
+*)
+
+<constant> ::= <integer_constant>
+
+<integer_constant> ::= <decimal_constant>
+                       | <hexadecimal_constant>
+                       | <character_constant>
+
+<digit_excluding_zero> ::= <digit> - "0"
+
+<decimal_constant> ::= "0" | <digit_excluding_zero> { <digit> }
+
+<hexadecimal_digit> ::= (? 0-9 ?) | (? A-F ?) | (? a-f ?)
+
+<hexadecimal_constant> ::= "0" ( "X" | "x" ) <hexadecimal_digit> { <hexadecimal_digit> }
+
+<common_single_character> ::= ( <visible_character> - "\\" ) | <space> | <tab>
+
+<common_escape_character> ::= "0"
+                              | "a"
+                              | "b"
+                              | "t"
+                              | "n"
+                              | "v"
+                              | "f"
+                              | "r"
+                              | "e"
+                              | "\\"
+
+<character_constant_single_character> ::= ( <common_single_character> - "'" )
+
+<character_constant_escape_character> ::= <common_escape_character> | "'"
+
+<character_constant_escape_sequence> ::= "\\" <character_constant_escape_character>
+
+<character_constant> ::= "'" ( <character_constant_single_character>> | <character_constant_escape_sequence> ) "'"
+
+(* roadmap: string constants *)
+
+(**
+  Phrase structure grammar
+**)
+
+<program> ::= { <declaration> }
+
+(*
+  Declarations
+*)
+
+<declaration> ::= <variable_declaration> | <function_declaration>
+
+<type_specifier> ::= "int" | "float"
+
+<initializer> ::= "=" <constant>
+
+<variable_declaration> ::= "var" <identifier> ":" <type_specifier> [ <initializer> ] ";"
+
+<function_parameter> ::= "var" <identifier> ":" <type_specifier>
+
+<function_parameter_list> ::= <function_parameter> [ "," <function_parameter_list> ]
+
+<function_declaration> ::= "fn" <identifier> "(" [ <function_parameter_list> ] ")" ":" <type_specifier>
+                           "{" <statement_list> "}"
+
+(*
+  Statements
+*)
+
+<statement_list> ::= { <statement> }
+
+<statement> ::= <null_statement>
+                | <expression_statement>
+                | <if_statement>
+                | <while_statement>
+                | <return_statement>
+                | <variable_declaration>
+
+<null_statement> ::= ";"
+
+<expression_statement> ::= <expression> ";"
+
+<control_flow_body> ::= <null_statement> | ( "{" <statement_list> "}" )
+
+<if_statement> ::= "if" "(" <expression> ")" <control_flow_body>
+
+<while_statement> ::= "while" "(" <expression> ")" <control_flow_body>
+
+<return_statement> ::= "return" <expression> ";"
+
+(*
+  Expressions
+*)
+
+<expression> ::= (* todo *)

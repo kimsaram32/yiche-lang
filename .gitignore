@@ -1,0 +1,9 @@
+# Compiled artifacts
+*.o
+*.dSYM/
+a.out
+
+# Editors
+*.swp
+*~
+\#*\#
