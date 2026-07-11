@@ -36,13 +36,12 @@
   Operators and punctuation symbols
 *)
 
-<operator_and_punctuation> ::= ":" | ";"
+<operator_and_punctuation> ::= ":" | ";" | ","
                                | "+" | "-" | "*" | "/" | "%"
-                               | "~" | "&" | "|" | "^" | "<<" | ">>"
                                | "<" | ">" | "<=" | ">=" | "==" | "!="
                                | "&&" | "||" | "!"
                                | "="
-                               | "(" | ")"
+                               | "(" | ")" | "{" | "}"
 
 (*
   Keywords
@@ -99,7 +98,7 @@
 
 <character_constant_escape_sequence> ::= "\\" <character_constant_escape_character>
 
-<character_constant> ::= "'" ( <character_constant_single_character>> | <character_constant_escape_sequence> ) "'"
+<character_constant> ::= "'" ( <character_constant_single_character> | <character_constant_escape_sequence> ) "'"
 
 (* roadmap: string constants *)
 
