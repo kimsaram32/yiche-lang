@@ -16,4 +16,4 @@ Currently, the feature set is minimal:
 1. types: integers and floating-point numbers
 2. declarations: variables and functions
 3. control flow: if and while
-4. expressions: arithmetic, bitwise, relation, logical, assignment
+4. expressions: arithmetic, relation, logical, assignment
