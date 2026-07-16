@@ -33,7 +33,9 @@
 <comment> ::= <single_line_comment> | <multi_line_comment>
 
 (*
-  Operators and punctuation symbols
+  Operators and punctuations
+  In this project these are sometimes called 'symbols'
+  (e.g. TOKEN_SYMBOL_ types in the codebase)
 *)
 
 <operator_and_punctuation> ::= ":" | ";" | ","

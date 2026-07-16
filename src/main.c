@@ -24,24 +24,74 @@ static char *keyword_to_string(token_type_t keyword_type)
   }
 }
 
+static char *symbol_to_string(token_type_t symbol_type)
+{
+  switch (symbol_type)
+  {
+    case TOKEN_SYMBOL_LPAREN:
+      return "(";
+    case TOKEN_SYMBOL_RPAREN:
+      return ")";
+    case TOKEN_SYMBOL_LBRACKET:
+      return "[";
+    case TOKEN_SYMBOL_RBRACKET:
+      return "]";
+    case TOKEN_SYMBOL_LBRACE:
+      return "{";
+    case TOKEN_SYMBOL_RBRACE:
+      return "}";
+    case TOKEN_SYMBOL_LT:
+      return "<";
+    case TOKEN_SYMBOL_GT:
+      return ">";
+    case TOKEN_SYMBOL_EXCLAMATION:
+      return "!";
+    case TOKEN_SYMBOL_PERCENT:
+      return "%";
+    case TOKEN_SYMBOL_ASTERISK:
+      return "*";
+    case TOKEN_SYMBOL_PLUS:
+      return "+";
+    case TOKEN_SYMBOL_MINUS:
+      return "-";
+    case TOKEN_SYMBOL_COLON:
+      return ":";
+    case TOKEN_SYMBOL_SEMICOLON:
+      return ";";
+    case TOKEN_SYMBOL_SLASH:
+      return "/";
+    case TOKEN_SYMBOL_COMMA:
+      return ",";
+    case TOKEN_SYMBOL_EQ:
+      return "=";
+    case TOKEN_SYMBOL_EQEQ:
+        return "==";
+    case TOKEN_SYMBOL_LE:
+        return "<=";
+    case TOKEN_SYMBOL_GE:
+        return ">=";
+    case TOKEN_SYMBOL_ANDAND:
+        return "&&";
+    case TOKEN_SYMBOL_OROR:
+        return "||";
+    default:
+      return NULL;
+  }
+}
+
 int main(void)
 {
   tokenize();
 
   for (int i = 0; i < tokens_size; i++)
-    switch (tokens[i].type)
-    {
-      case TOKEN_IDENTIFIER:
-        printf("identifier: %s\n", tokens[i].identifier);
-        break;
-      case TOKEN_SYMBOL:
-        printf("symbol: %s\n", tokens[i].symbol);
-        break;
-      case TOKEN_CONSTANT:
-        printf("constant: %d\n", tokens[i].constant);
-        break;
-      default:
-        printf("keyword: %s\n", keyword_to_string(tokens[i].type));
-        break;
-    }
+  {
+    if (tokens[i].type == TOKEN_IDENTIFIER)
+      printf("identifier: %s\n", tokens[i].identifier);
+    else if (tokens[i].type == TOKEN_CONSTANT)
+      printf("constant: %d\n", tokens[i].constant);
+    else if (IS_KEYWORD(tokens[i]))
+      printf("keyword: %s\n", keyword_to_string(tokens[i].type));
+    else // symbol
+      printf("symbol: %s\n", symbol_to_string(tokens[i].type));
+  }
 }

@@ -49,11 +49,10 @@ static void token_append_identifier(char *identifier)
   tokens_size++;
 }
 
-static void token_append_symbol(char *symbol)
+static void token_append_symbol(token_type_t symbol_type)
 {
   reallocate_tokens_for_next_if_needed();
-  tokens[tokens_size].type = TOKEN_SYMBOL;
-  tokens[tokens_size].symbol = symbol;
+  tokens[tokens_size].type = symbol_type;
   tokens_size++;
 }
 
@@ -226,20 +225,75 @@ static char *read_keyword_or_identifier(char initial)
   return buf;
 }
 
-static int valid_symbols_1[128] = {
-  [':'] = 1,  [';'] = 1, [','] = 1,
-  ['+'] = 1,  ['-'] = 1,  ['*'] = 1,  ['/'] = 1,  ['%'] = 1,
-  ['<'] = 1,  ['>'] = 1,
-  ['!'] = 1,
-  ['='] = 1,
-  ['('] = 1,  [')'] = 1,  ['{'] = 1,  ['}'] = 1,
-};
-
-static char *valid_symbols_2[] = { "<=", ">=", "==", "!=", "&&", "||", };
-
-static char *read_symbol(char initial)
+// returns a symbol token_type_t or -1.
+static int get_symbol_1(char sym)
 {
-  if (!valid_symbols_1[initial])
+  switch (sym)
+  {
+    case '(':
+      return TOKEN_SYMBOL_LPAREN;
+    case ')':
+      return TOKEN_SYMBOL_RPAREN;
+    case '[':
+      return TOKEN_SYMBOL_LBRACKET;
+    case ']':
+      return TOKEN_SYMBOL_RBRACKET;
+    case '{':
+      return TOKEN_SYMBOL_LBRACE;
+    case '}':
+      return TOKEN_SYMBOL_RBRACE;
+    case '<':
+      return TOKEN_SYMBOL_LT;
+    case '>':
+      return TOKEN_SYMBOL_GT;
+    case '!':
+      return TOKEN_SYMBOL_EXCLAMATION;
+    case '%':
+      return TOKEN_SYMBOL_PERCENT;
+    case '*':
+      return TOKEN_SYMBOL_ASTERISK;
+    case '+':
+      return TOKEN_SYMBOL_PLUS;
+    case '-':
+      return TOKEN_SYMBOL_MINUS;
+    case ':':
+      return TOKEN_SYMBOL_COLON;
+    case ';':
+      return TOKEN_SYMBOL_SEMICOLON;
+    case '/':
+      return TOKEN_SYMBOL_SLASH;
+    case ',':
+      return TOKEN_SYMBOL_COMMA;
+    case '=':
+      return TOKEN_SYMBOL_EQ;
+    default:
+      return -1;
+  }
+}
+
+// returns a symbol token type or -1.
+static int get_symbol_2(char *sym)
+{
+  if (!strcmp(sym, "=="))
+    return TOKEN_SYMBOL_EQEQ;
+  else if (!strcmp(sym, "<="))
+    return TOKEN_SYMBOL_LE;
+  else if (!strcmp(sym, ">="))
+    return TOKEN_SYMBOL_GE;
+  else if (!strcmp(sym, "&&"))
+    return TOKEN_SYMBOL_ANDAND;
+  else if (!strcmp(sym, "||"))
+    return TOKEN_SYMBOL_OROR;
+  else
+    return -1;
+}
+
+// returns a symbol type.
+static token_type_t read_symbol(char initial)
+{
+  int type;
+
+  if ((type = get_symbol_1(initial)) == -1)
     exit_with_lexical_error("invalid symbol");
 
   char *buf = calloc(3, sizeof(char));
@@ -247,15 +301,13 @@ static char *read_symbol(char initial)
 
   if ((buf[1] = get_char()) != EOF)
   {
-    for (int i = 0; i < ARRAY_LENGTH(valid_symbols_2); i++)
-      if (!strcmp(buf, valid_symbols_2[i]))
-        return buf;
-
+    int t = get_symbol_2(buf);
+    if (t != -1)
+      return t;
     unget_char();
-    buf[1] = '\0';
   }
 
-  return buf;
+  return type;
 }
 
 static int is_hexadecimal_digit(char c)
