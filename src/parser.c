@@ -141,6 +141,8 @@ static ast_node_t *parse_primitive_expr(void)
   return node;
 }
 
+// <function_call_expression> ::= <primitive_expression> { "(" [ <function_call_argument_list> ] ")" }
+
 static ast_node_t *parse_function_call_expr(void)
 {
   ast_node_t *root = parse_primitive_expr();
@@ -229,6 +231,9 @@ static ast_node_type_t get_binary_operator_type(token_type_t symbol_type)
       exit_with_error("get_binary_operator_type: missing binary operator mapping for symbol %d", symbol_type);
   }
 }
+
+// Left-recursive binary expressions are handled as right-recursive, e.g.,
+// <multiplicative_expression> ::= <prefix_expression> [ ( "*" | "/" | "%" ) <multiplicative_expression> ]
 
 #define DEFINE_BINARY_EXPR_PARSE_FUNCTION(func, prev, types_n, ...) \
 static ast_node_t *func(void) \
