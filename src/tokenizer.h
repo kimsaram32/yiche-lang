@@ -71,4 +71,12 @@ extern int tokens_size;
 
 void tokenize(void);
 
+token_t *token_advance(void);
+token_t *token_peek_next(void);
+void token_unget(void);
+
+// Convenience functions
+token_t *token_advance_and_assert(int n, ...);
+token_t *token_try_advancing(int n, ...);
+
 #endif

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "yiche.h"
 
 typedef struct
@@ -456,3 +457,71 @@ void tokenize(void)
       token_append_symbol(read_symbol(c));
   }
 }
+
+/*
+ * Consumption
+ */
+
+static int token_next_pos = 0;
+
+token_t *token_advance(void)
+{
+  if (token_next_pos == tokens_size)
+    return NULL;
+  return &tokens[token_next_pos++];
+}
+
+token_t *token_peek_next(void)
+{
+  if (token_next_pos == tokens_size)
+    return NULL;
+  return &tokens[token_next_pos];
+}
+
+void token_unget(void)
+{
+  if (token_next_pos == 0)
+    exit_with_error("token_unget(): no token to unget");
+  token_next_pos--;
+}
+
+token_t *token_advance_and_assert(int n, ...)
+{
+  va_list types;
+  token_t *token = token_advance();
+  if (token == NULL)
+    exit_with_error("expected a token, got nothing\n");
+
+  for (va_start(types, n); n--;)
+  {
+    if (token->type == va_arg(types, token_type_t))
+    {
+      va_end(types);
+      return token;
+    }
+  }
+
+  va_end(types);
+  exit_with_error("unexpected token\n");
+}
+
+token_t *token_try_advancing(int n, ...)
+{
+  va_list types;
+  token_t *token = token_peek_next();
+  if (token == NULL)
+    return NULL;
+
+  for (va_start(types, n); n--;)
+  {
+    if (token->type == va_arg(types, token_type_t))
+    {
+      va_end(types);
+      return token_advance();
+    }
+  }
+
+  va_end(types);
+  return NULL;
+}
+
