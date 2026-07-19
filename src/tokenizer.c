@@ -20,7 +20,8 @@ static int get_char_history_index = 0;
 
 static void exit_with_lexical_error(char *s)
 {
-  exit_with_error("lexical error at line %d, column %d:\n%s",
+  exit_with_error("lexical error at '%c' (line %d, column %d):\n%s",
+                  GET_CHAR_LAST_HISTORY_ITEM.c,
                   GET_CHAR_LAST_HISTORY_ITEM.line, GET_CHAR_LAST_HISTORY_ITEM.column, s);
 }
 
