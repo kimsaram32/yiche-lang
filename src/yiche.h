@@ -5,5 +5,6 @@
 
 #endif
 
-#include "tokenizer.h"
 #include "error.h"
+#include "tokenizer.h"
+#include "parser.h"

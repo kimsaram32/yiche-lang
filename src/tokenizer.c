@@ -277,6 +277,8 @@ static int get_symbol_2(char *sym)
 {
   if (!strcmp(sym, "=="))
     return TOKEN_SYMBOL_EQEQ;
+  else if (!strcmp(sym, "!="))
+    return TOKEN_SYMBOL_BANGEQ;
   else if (!strcmp(sym, "<="))
     return TOKEN_SYMBOL_LE;
   else if (!strcmp(sym, ">="))

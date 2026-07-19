@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "yiche.h"
 
 static char *keyword_to_string(token_type_t keyword_type)
@@ -65,7 +67,9 @@ static char *symbol_to_string(token_type_t symbol_type)
     case TOKEN_SYMBOL_EQ:
       return "=";
     case TOKEN_SYMBOL_EQEQ:
-        return "==";
+      return "==";
+    case TOKEN_SYMBOL_BANGEQ:
+      return "!=";
     case TOKEN_SYMBOL_LE:
         return "<=";
     case TOKEN_SYMBOL_GE:
@@ -79,8 +83,88 @@ static char *symbol_to_string(token_type_t symbol_type)
   }
 }
 
+void print_with_level(char *str, int level)
+{
+  for (int i = 0; i < level; i++)
+    printf("  ");
+  printf("- %s\n", str);
+}
+
+#define CASE_UNARY(type, name) \
+  case type: { \
+    print_with_level(name, level); \
+    ast_node_binary_expr_t *data = node->data; \
+    print_ast(data->left_operand, level + 1); \
+    break; \
+  }
+
+#define CASE_BINARY(type, name) \
+  case type: { \
+    print_with_level(name, level); \
+    ast_node_binary_expr_t *data = node->data; \
+    print_ast(data->left_operand, level + 1); \
+    print_ast(data->right_operand, level + 1); \
+    break; \
+  }
+
+void print_ast(ast_node_t *node, int level)
+{
+  switch (node->type)
+  {
+    case AST_EXPR_PRIMITIVE: {
+      ast_node_primitive_expr_t *data = node->data;
+      char buf[100];
+      switch (data->token->type)
+      {
+        case TOKEN_IDENTIFIER:
+          sprintf(buf, "Identifier %s", data->token->identifier);
+          break;
+        case TOKEN_CONSTANT:
+          sprintf(buf, "Constant %d", data->token->constant);
+          break;
+        default:
+          break;
+      }
+      print_with_level(buf, level);
+      break;
+    }
+    case AST_EXPR_FUNCTION_CALL: {
+      ast_node_function_call_expr_t *data = node->data;
+      print_with_level("Function call", level);
+      print_with_level("Callee", level + 1);
+      print_ast(data->callee, level + 2);
+      print_with_level("Arguments", level + 1);
+      for (int i = 0; i < data->arguments_size; i++)
+        print_ast(data->arguments[i], level + 2);
+      break;
+    }
+      CASE_UNARY(AST_EXPR_LOGICAL_NEGATION, "Logical negation");
+
+      CASE_BINARY(AST_EXPR_ADDITION, "Addition");
+      CASE_BINARY(AST_EXPR_SUBTRACTION, "Subtraction");
+      CASE_BINARY(AST_EXPR_MULTIPLICATION, "Multiplication");
+      CASE_BINARY(AST_EXPR_DIVISION, "Division");
+      CASE_BINARY(AST_EXPR_MODULO, "Modulo");
+      CASE_BINARY(AST_EXPR_LESS_THAN, "<");
+      CASE_BINARY(AST_EXPR_GREATER_THAN, ">");
+      CASE_BINARY(AST_EXPR_LESS_THAN_EQUAL_TO, "<=");
+      CASE_BINARY(AST_EXPR_GREATER_THAN_EQUAL_TO, ">=");
+      CASE_BINARY(AST_EXPR_EQUALS, "==");
+      CASE_BINARY(AST_EXPR_NOT_EQUALS, "!=");
+      CASE_BINARY(AST_EXPR_LOGICAL_AND, "&&");
+      CASE_BINARY(AST_EXPR_LOGICAL_OR, "||");
+      CASE_BINARY(AST_EXPR_ASSIGNMENT, "=");
+    default: {
+      exit_with_error("Not supported\n");
+      break;
+    }
+  }
+}
+
 int main(void)
 {
+  printf("TOKENIZING\n");
+
   tokenize();
 
   for (int i = 0; i < tokens_size; i++)
@@ -94,4 +178,11 @@ int main(void)
     else // symbol
       printf("symbol: %s\n", symbol_to_string(tokens[i].type));
   }
+
+  printf("PARSING\n");
+
+  ast_node_t *root = parse();
+  print_ast(root, 0);
+
+  return 0;
 }

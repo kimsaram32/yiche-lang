@@ -1,0 +1,298 @@
+#include "yiche.h"
+
+/*
+ * Nodes
+ */
+
+static ast_node_t *ast_node_create(ast_node_type_t type)
+{
+  ast_node_t *node = malloc(sizeof(ast_node_t));
+  if (node == NULL)
+    exit_out_of_memory();
+
+  node->type = type;
+  node->data = NULL;
+
+  return node;
+}
+
+#define AST_NODE_CREATE_WITH_DATA(node, data, type, data_type) do { \
+    node = ast_node_create(type); \
+    data = malloc(sizeof(data_type)); \
+    if (data == NULL) {\
+      exit_out_of_memory(); \
+    } \
+    node->data = data; \
+  } \
+  while (0)
+
+static ast_node_t *ast_node_binary_expr_create(ast_node_type_t type, ast_node_t *left_operand,
+                                               ast_node_t *right_operand)
+{
+  ast_node_t *node;
+  ast_node_binary_expr_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_binary_expr_t);
+
+  data->left_operand = left_operand;
+  data->right_operand = right_operand;
+
+  return node;
+}
+
+static ast_node_t *ast_node_primitive_expr_create(token_t *token)
+{
+  ast_node_t *node;
+  ast_node_primitive_expr_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_EXPR_PRIMITIVE, ast_node_primitive_expr_t);
+
+  data->token = token;
+
+  return node;
+}
+
+static ast_node_t *ast_node_unary_expr_create(ast_node_type_t type, ast_node_t *operand)
+{
+  ast_node_t *node;
+  ast_node_unary_expr_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_unary_expr_t);
+
+  data->operand = operand;
+
+  return node;
+}
+
+static ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
+{
+  ast_node_t *node;
+  ast_node_function_call_expr_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_EXPR_FUNCTION_CALL, ast_node_function_call_expr_t);
+
+  data->callee = callee;
+  data->arguments_capacity = 8;
+  data->arguments = malloc(sizeof(ast_node_t*) * data->arguments_capacity);
+  if (data->arguments == NULL)
+  {
+    free(node);
+    return NULL;
+  }
+  data->arguments_size = 0;
+
+  return node;
+}
+
+static void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg)
+{
+  ast_node_function_call_expr_t *data = node->data;
+
+  if (data->arguments_size == data->arguments_capacity)
+  {
+    data->arguments_capacity *= 2;
+
+    ast_node_t **new_arguments = realloc(data->arguments, sizeof(ast_node_t*) * data->arguments_capacity);
+    if (new_arguments == NULL)
+      exit_out_of_memory();
+
+    data->arguments = new_arguments;
+  }
+
+  data->arguments[data->arguments_size++] = arg;
+}
+
+/*
+ * Expressions
+ *
+ * Adding a new binary operator:
+ * 1. Add a function declaration below
+ * 2. Add new mapping in 'get_binary_operator_type'
+ * 3. Implement the function by either using a macro or manually writing it
+ */
+
+static ast_node_t *parse_expr(void);
+static ast_node_t *parse_primitive_expr(void);
+static ast_node_t *parse_function_call_expr(void);
+static ast_node_t *parse_prefix_expr(void);
+static ast_node_t *parse_multiplicative_expr(void);
+static ast_node_t *parse_additive_expr(void);
+static ast_node_t *parse_comparison_expr(void);
+static ast_node_t *parse_equality_expr(void);
+static ast_node_t *parse_logical_and_expr(void);
+static ast_node_t *parse_logical_or_expr(void);
+static ast_node_t *parse_assignment_expr(void);
+
+static ast_node_t *parse_expr(void)
+{
+  return parse_assignment_expr();
+}
+
+static ast_node_t *parse_primitive_expr(void)
+{
+  token_t *token = token_advance_and_assert(3, TOKEN_IDENTIFIER, TOKEN_CONSTANT,
+                                            TOKEN_SYMBOL_LPAREN);
+  ast_node_t *node;
+
+  if (token->type == TOKEN_SYMBOL_LPAREN)
+  {
+    node = parse_expr();
+    token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+    return node;
+  }
+
+  node = ast_node_primitive_expr_create(token);
+  return node;
+}
+
+static ast_node_t *parse_function_call_expr(void)
+{
+  ast_node_t *root = parse_primitive_expr();
+
+  while (token_try_advancing(1, TOKEN_SYMBOL_LPAREN))
+  {
+    root = ast_node_function_call_expr_create(root);
+
+    if (token_try_advancing(1, TOKEN_SYMBOL_RPAREN) == NULL)
+    {
+      do
+        ast_node_function_call_expr_append_argument(root, parse_expr());
+      while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
+             == TOKEN_SYMBOL_COMMA);
+    }
+  }
+
+  return root;
+}
+
+static ast_node_t *parse_prefix_expr(void)
+{
+  ast_node_t *root = NULL, **node_p = &root;
+
+  token_t *token_operator;
+
+  while ((token_operator = token_try_advancing(1, TOKEN_SYMBOL_BANG)) != NULL)
+  {
+    ast_node_type_t type;
+    switch (token_operator->type)
+    {
+      case TOKEN_SYMBOL_BANG:
+        type = AST_EXPR_LOGICAL_NEGATION;
+        break;
+      default:
+        break;
+    }
+    *node_p = ast_node_unary_expr_create(type, NULL);
+    node_p = &((ast_node_unary_expr_t*)((*node_p)->data))->operand;
+  }
+
+  *node_p = parse_function_call_expr();
+  return root;
+}
+
+static ast_node_type_t get_binary_operator_type(token_type_t symbol_type)
+{
+  switch (symbol_type)
+  {
+    case TOKEN_SYMBOL_ASTERISK:
+      return AST_EXPR_MULTIPLICATION;
+    case TOKEN_SYMBOL_SLASH:
+      return AST_EXPR_DIVISION;
+    case TOKEN_SYMBOL_PERCENT:
+      return AST_EXPR_MODULO;
+
+    case TOKEN_SYMBOL_PLUS:
+      return AST_EXPR_ADDITION;
+    case TOKEN_SYMBOL_MINUS:
+      return AST_EXPR_SUBTRACTION;
+
+    case TOKEN_SYMBOL_LT:
+      return AST_EXPR_LESS_THAN;
+    case TOKEN_SYMBOL_GT:
+      return AST_EXPR_GREATER_THAN;
+    case TOKEN_SYMBOL_LE:
+      return AST_EXPR_LESS_THAN_EQUAL_TO;
+    case TOKEN_SYMBOL_GE:
+      return AST_EXPR_GREATER_THAN_EQUAL_TO;
+
+    case TOKEN_SYMBOL_EQEQ:
+      return AST_EXPR_EQUALS;
+    case TOKEN_SYMBOL_BANGEQ:
+      return AST_EXPR_NOT_EQUALS;
+
+    case TOKEN_SYMBOL_ANDAND:
+      return AST_EXPR_LOGICAL_AND;
+
+    case TOKEN_SYMBOL_OROR:
+      return AST_EXPR_LOGICAL_OR;
+
+    case TOKEN_SYMBOL_EQ:
+      return AST_EXPR_ASSIGNMENT;
+
+    default:
+      exit_with_error("get_binary_operator_type: missing binary operator mapping for symbol %d", symbol_type);
+  }
+}
+
+#define DEFINE_BINARY_EXPR_PARSE_FUNCTION(func, prev, types_n, ...) \
+static ast_node_t *func(void) \
+{ \
+  ast_node_t *root = prev(); \
+  token_t *token_operator; \
+  while ((token_operator = token_try_advancing(types_n, __VA_ARGS__)) != NULL) \
+  { \
+    ast_node_t *right_operand = prev(); \
+    ast_node_type_t type = get_binary_operator_type(token_operator->type); \
+    root = ast_node_binary_expr_create(type, root, right_operand); \
+  } \
+  return root; \
+}
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_multiplicative_expr, parse_prefix_expr, 3,
+                                  TOKEN_SYMBOL_ASTERISK, TOKEN_SYMBOL_SLASH, TOKEN_SYMBOL_PERCENT)
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_additive_expr, parse_multiplicative_expr, 2,
+                                  TOKEN_SYMBOL_PLUS, TOKEN_SYMBOL_MINUS)
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_comparison_expr, parse_additive_expr, 4,
+                                  TOKEN_SYMBOL_LT, TOKEN_SYMBOL_GT, TOKEN_SYMBOL_LE,
+                                  TOKEN_SYMBOL_GE)
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_equality_expr, parse_comparison_expr, 2,
+                                  TOKEN_SYMBOL_EQEQ, TOKEN_SYMBOL_BANGEQ)
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_and_expr, parse_equality_expr, 1,
+                                  TOKEN_SYMBOL_ANDAND)
+
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_or_expr, parse_logical_and_expr, 1,
+                                  TOKEN_SYMBOL_OROR)
+
+ast_node_t *parse_assignment_expr(void)
+{
+  ast_node_t *root = NULL, **node_p = &root;
+
+  while (1)
+  {
+    token_t *token_identifier = token_try_advancing(1, TOKEN_IDENTIFIER);
+    if (token_identifier == NULL)
+      break;
+
+    if (token_try_advancing(1, TOKEN_SYMBOL_EQ) == NULL)
+    {
+      token_unget();
+      break;
+    }
+
+    ast_node_t *identifier_node = ast_node_primitive_expr_create(token_identifier);
+    *node_p = ast_node_binary_expr_create(AST_EXPR_ASSIGNMENT, identifier_node, NULL);
+    node_p = &((ast_node_binary_expr_t*)((*node_p)->data))->right_operand;
+  }
+
+  *node_p = parse_logical_or_expr();
+  return root;
+}
+
+/*
+ * Statements
+ */
+
+ast_node_t *parse(void)
+{
+  return parse_expr();
+}

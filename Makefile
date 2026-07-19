@@ -1,6 +1,6 @@
 src_dir = src
-objects = $(src_dir)/error.o $(src_dir)/main.o $(src_dir)/tokenizer.o
-headers = $(src_dir)/error.h $(src_dir)/tokenizer.h
+objects = $(src_dir)/error.o $(src_dir)/main.o $(src_dir)/tokenizer.o $(src_dir)/parser.o
+headers = $(src_dir)/error.h $(src_dir)/tokenizer.h $(src_dir)/parser.h
 bin = yiche
 
 CC = gcc
