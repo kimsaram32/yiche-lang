@@ -12,7 +12,7 @@ typedef enum
   TOKEN_IDENTIFIER,
   TOKEN_CONSTANT,
 
-  // keywords
+  // Keywords
   TOKEN_KEYWORD_START,
   TOKEN_KEYWORD_FLOAT,
   TOKEN_KEYWORD_FN,
@@ -23,7 +23,7 @@ typedef enum
   TOKEN_KEYWORD_WHILE,
   TOKEN_KEYWORD_END,
 
-  // symbols
+  // Symbols
   // adding a new symbol:
   // - main.c: change symbol_to_string
   // - tokenizer.c: change either get_symbol_1 or get_symbol_2
@@ -36,7 +36,7 @@ typedef enum
   TOKEN_SYMBOL_RBRACE, // }
   TOKEN_SYMBOL_LT, // <
   TOKEN_SYMBOL_GT, // >
-  TOKEN_SYMBOL_EXCLAMATION,
+  TOKEN_SYMBOL_BANG,
   TOKEN_SYMBOL_PERCENT,
   TOKEN_SYMBOL_ASTERISK,
   TOKEN_SYMBOL_PLUS,

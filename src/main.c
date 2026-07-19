@@ -44,7 +44,7 @@ static char *symbol_to_string(token_type_t symbol_type)
       return "<";
     case TOKEN_SYMBOL_GT:
       return ">";
-    case TOKEN_SYMBOL_EXCLAMATION:
+    case TOKEN_SYMBOL_BANG:
       return "!";
     case TOKEN_SYMBOL_PERCENT:
       return "%";

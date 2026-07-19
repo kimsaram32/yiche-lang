@@ -147,10 +147,10 @@ static int get_char(void)
 static void unget_char()
 {
   if (get_char_backs == GET_CHAR_MAX_HISTORY_SIZE)
-    exit_with_error("Maximum size exceeded for unget_char() calls");
+    exit_with_error("unget_char(): maximum count exceeded");
 
   if (get_char_history_index < 0)
-    exit_with_error("No character to unget");
+    exit_with_error("unget_char(): character to unget");
 
   get_char_history_index--;
   get_char_backs++;
@@ -247,7 +247,7 @@ static int get_symbol_1(char sym)
     case '>':
       return TOKEN_SYMBOL_GT;
     case '!':
-      return TOKEN_SYMBOL_EXCLAMATION;
+      return TOKEN_SYMBOL_BANG;
     case '%':
       return TOKEN_SYMBOL_PERCENT;
     case '*':
