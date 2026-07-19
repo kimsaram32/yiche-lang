@@ -166,29 +166,22 @@
 
 <function_call_argument_list> ::= <expression> [ "," <function_call_argument_list> ]
 
-<function_call_expression> ::= <primitive_expression>
-                               | <function_call_expression> "(" [ <function_call_argument_list> ] ")"
+<function_call_expression> ::= <primitive_expression> { "(" [ <function_call_argument_list> ] ")" }
 
 <prefix_expression> ::= <function_call_expression>
-                       | ( "!" ) <prefix_expression>
+                        | ( "!" ) <prefix_expression>
 
-<multiplicative_expression> ::= <prefix_expression>
-                                | <multiplicative_expression> ( "*" | "/" | "%" ) <prefix_expression>
+<multiplicative_expression> ::= <prefix_expression> [ ( "*" | "/" | "%" ) <multiplicative_expression> ]
 
-<additive_expression> ::= <multiplicative_expression>
-                          | <additive_expression> ( "+" | "-" ) <multiplicative_expression>
+<additive_expression> ::= <multiplicative_expression> [ ( "+" | "-" ) <additive_expression> ]
 
-<comparison_expression> ::= <additive_expression>
-                            | <comparison_expression> ( "<" | ">" | "<=" | ">=" ) <additive_expression>
+<comparison_expression> ::= <additive_expression> [ ( "<" | ">" | "<=" | ">=" ) <comparison_expression> ]
 
-<equality_expression> ::= <comparison_expression>
-                          | <equality_expression> ( "==" | "!=" ) <comparison_expression>
+<equality_expression> ::= <comparison_expression> [ ( "==" | "!=" ) <equality_expression> ]
 
-<logical_and_expression> ::= <equality_expression>
-                             | <logical_and_expression> "&&" <equality_expression>
+<logical_and_expression> ::= <equality_expression> [ "&&" <logical_and_expression> ]
 
-<logical_or_expression> ::= <logical_and_expression>
-                            | <logical_or_expression> "||" <logical_and_expression>
+<logical_or_expression> ::= <logical_and_expression> [ "||" <logical_and_expression> ]
 
 <assignment_expression> ::= <logical_or_expression>
                             | <identifier> "=" <assignment_expression>
