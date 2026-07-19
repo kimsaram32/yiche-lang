@@ -128,6 +128,7 @@ void print_ast(ast_node_t *node, int level)
       print_with_level(buf, level);
       break;
     }
+
     case AST_EXPR_FUNCTION_CALL: {
       ast_node_function_call_expr_t *data = node->data;
       print_with_level("Function call", level);
@@ -138,6 +139,7 @@ void print_ast(ast_node_t *node, int level)
         print_ast(data->arguments[i], level + 2);
       break;
     }
+
       CASE_UNARY(AST_EXPR_LOGICAL_NEGATION, "Logical negation");
 
       CASE_BINARY(AST_EXPR_ADDITION, "Addition");
@@ -154,6 +156,41 @@ void print_ast(ast_node_t *node, int level)
       CASE_BINARY(AST_EXPR_LOGICAL_AND, "&&");
       CASE_BINARY(AST_EXPR_LOGICAL_OR, "||");
       CASE_BINARY(AST_EXPR_ASSIGNMENT, "=");
+
+    case AST_STMT_LIST: {
+      ast_node_stmt_list_t *data = node->data;
+      print_with_level("Statement list", level);
+      for (int i = 0; i < data->stmts_size; i++)
+        print_ast(data->stmts[i], level + 1);
+      break;
+    }
+
+    case AST_STMT_EXPR: {
+      print_with_level("Expression statement", level);
+      print_ast(DATA_STMT(node)->expr_0, level + 1);
+      break;
+    }
+
+    case AST_STMT_IF: {
+      print_with_level("If statement", level);
+      print_ast(DATA_STMT(node)->expr_0, level + 1);
+      print_ast(DATA_STMT(node)->stmt_list, level + 1);
+      break;
+    }
+
+    case AST_STMT_WHILE: {
+      print_with_level("While statement", level);
+      print_ast(DATA_STMT(node)->expr_0, level + 1);
+      print_ast(DATA_STMT(node)->stmt_list, level + 1);
+      break;
+    }
+
+    case AST_STMT_RETURN: {
+      print_with_level("Return statement", level);
+      print_ast(DATA_STMT(node)->expr_0, level + 1);
+      break;
+    }
+
     default: {
       exit_with_error("Not supported\n");
       break;

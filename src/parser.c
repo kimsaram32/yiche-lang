@@ -71,10 +71,7 @@ static ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
   data->arguments_capacity = 8;
   data->arguments = malloc(sizeof(ast_node_t*) * data->arguments_capacity);
   if (data->arguments == NULL)
-  {
-    free(node);
-    return NULL;
-  }
+    exit_out_of_memory();
   data->arguments_size = 0;
 
   return node;
@@ -98,10 +95,58 @@ static void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_no
   data->arguments[data->arguments_size++] = arg;
 }
 
+static ast_node_t *ast_node_stmt_list_create(void)
+{
+  ast_node_t *node;
+  ast_node_stmt_list_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_STMT_LIST, ast_node_stmt_list_t);
+
+  data->stmts_capacity = 8;
+  data->stmts = malloc(sizeof(ast_node_t*) * data->stmts_capacity);
+  if (data->stmts == NULL)
+    exit_out_of_memory();
+  data->stmts_size = 0;
+
+  return node;
+}
+
+static void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt)
+{
+  ast_node_stmt_list_t *data = node->data;
+
+  if (data->stmts_size == data->stmts_capacity)
+  {
+    data->stmts_capacity *= 2;
+
+    ast_node_t **new_stmts = realloc(data->stmts, sizeof(ast_node_t*) * data->stmts_capacity);
+    if (new_stmts == NULL)
+      exit_out_of_memory();
+
+    data->stmts = new_stmts;
+  }
+
+  data->stmts[data->stmts_size++] = stmt;
+}
+
+static ast_node_t *ast_node_stmt_create(ast_node_type_t type, ast_node_t *stmt_list,
+                                        ast_node_t *expr_0)
+{
+  ast_node_t *node;
+  ast_node_stmt_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_stmt_t);
+
+  data->stmt_list = stmt_list;
+  data->expr_0 = expr_0;
+
+  return node;
+}
+
 /*
- * Expressions
- *
- * Adding a new binary operator:
+ * Parser functions
+ */
+
+/*
+ * Writing a parser function for a new binary operator:
  * 1. Add a function declaration below
  * 2. Add new mapping in 'get_binary_operator_type'
  * 3. Implement the function by either using a macro or manually writing it
@@ -118,6 +163,19 @@ static ast_node_t *parse_equality_expr(void);
 static ast_node_t *parse_logical_and_expr(void);
 static ast_node_t *parse_logical_or_expr(void);
 static ast_node_t *parse_assignment_expr(void);
+
+static ast_node_t *parse_stmt_list(void);
+static ast_node_t *parse_expr_stmt(void);
+static ast_node_t *parse_if_stmt(void);
+static ast_node_t *parse_while_stmt(void);
+static ast_node_t *parse_return_stmt(void);
+
+static ast_node_t *parse_variable_decl(void);
+static ast_node_t *parse_function_decl(void);
+
+/*
+ * Expressions
+ */
 
 static ast_node_t *parse_expr(void)
 {
@@ -181,7 +239,7 @@ static ast_node_t *parse_prefix_expr(void)
         break;
     }
     *node_p = ast_node_unary_expr_create(type, NULL);
-    node_p = &((ast_node_unary_expr_t*)((*node_p)->data))->operand;
+    node_p = &(DATA_UNARY_EXPR(*node_p))->operand;
   }
 
   *node_p = parse_function_call_expr();
@@ -268,7 +326,7 @@ DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_and_expr, parse_equality_expr, 1
 DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_or_expr, parse_logical_and_expr, 1,
                                   TOKEN_SYMBOL_OROR)
 
-ast_node_t *parse_assignment_expr(void)
+static ast_node_t *parse_assignment_expr(void)
 {
   ast_node_t *root = NULL, **node_p = &root;
 
@@ -286,7 +344,7 @@ ast_node_t *parse_assignment_expr(void)
 
     ast_node_t *identifier_node = ast_node_primitive_expr_create(token_identifier);
     *node_p = ast_node_binary_expr_create(AST_EXPR_ASSIGNMENT, identifier_node, NULL);
-    node_p = &((ast_node_binary_expr_t*)((*node_p)->data))->right_operand;
+    node_p = &(DATA_BINARY_EXPR(*node_p)->right_operand);
   }
 
   *node_p = parse_logical_or_expr();
@@ -297,7 +355,118 @@ ast_node_t *parse_assignment_expr(void)
  * Statements
  */
 
+// <statement_list> ::= "{" { <statement> } "}"
+
+static ast_node_t *parse_stmt_list(void)
+{
+  token_t *token;
+  token_advance_and_assert(1, TOKEN_SYMBOL_LBRACE);
+
+  ast_node_t *node = ast_node_stmt_list_create();
+
+  while ((token = token_peek_next())->type != TOKEN_SYMBOL_RBRACE)
+  {
+    switch (token->type)
+    {
+      case TOKEN_SYMBOL_SEMICOLON: // null statement
+        token_advance();
+        break;
+      case TOKEN_KEYWORD_IF:
+        ast_node_stmt_list_append_stmt(node, parse_if_stmt());
+        break;
+      case TOKEN_KEYWORD_WHILE:
+        ast_node_stmt_list_append_stmt(node, parse_while_stmt());
+        break;
+      case TOKEN_KEYWORD_RETURN:
+        ast_node_stmt_list_append_stmt(node, parse_return_stmt());
+        break;
+      case TOKEN_KEYWORD_VAR:
+        ast_node_stmt_list_append_stmt(node, parse_variable_decl());
+        break;
+      default:
+        ast_node_stmt_list_append_stmt(node, parse_expr_stmt());
+        break;
+    }
+  }
+
+  return node;
+}
+
+static ast_node_t *parse_expr_stmt(void)
+{
+  ast_node_t *node_expr = parse_expr();
+  token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+  return ast_node_stmt_create(AST_STMT_EXPR, NULL, node_expr);
+}
+
+static ast_node_t *parse_if_stmt(void)
+{
+  ast_node_t *node_expr, *node_stmt_list;
+
+  token_advance_and_assert(1, TOKEN_KEYWORD_IF);
+
+  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+  node_expr = parse_expr();
+  token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+
+  token_t *token = token_advance_and_assert(2, TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
+  if (token->type == TOKEN_SYMBOL_LBRACE)
+  {
+    token_unget();
+    node_stmt_list = parse_stmt_list();
+  }
+  else
+    node_stmt_list = ast_node_stmt_list_create();
+
+  return ast_node_stmt_create(AST_STMT_IF, node_stmt_list, node_expr);
+}
+
+static ast_node_t *parse_while_stmt(void)
+{
+  ast_node_t *node_expr, *node_stmt_list;
+
+  token_advance_and_assert(1, TOKEN_KEYWORD_WHILE);
+
+  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+  node_expr = parse_expr();
+  token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+
+  token_t *token = token_advance_and_assert(2, TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
+  if (token->type == TOKEN_SYMBOL_LBRACE)
+  {
+    token_unget();
+    node_stmt_list = parse_stmt_list();
+  }
+  else
+    node_stmt_list = ast_node_stmt_list_create();
+
+  return ast_node_stmt_create(AST_STMT_WHILE, node_stmt_list, node_expr);
+}
+
+static ast_node_t *parse_return_stmt(void)
+{
+  token_advance_and_assert(1, TOKEN_KEYWORD_RETURN);
+  ast_node_t *node_expr = parse_expr();
+  token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+
+  return ast_node_stmt_create(AST_STMT_RETURN, NULL, node_expr);
+}
+
 ast_node_t *parse(void)
 {
-  return parse_expr();
+  return parse_stmt_list();
+}
+
+/*
+ * Declarations
+ */
+
+static ast_node_t *parse_variable_decl(void)
+{
+  return NULL;
+}
+
+static ast_node_t *parse_function_decl(void)
+{
+  return NULL;
 }
