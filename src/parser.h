@@ -1,6 +1,8 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
+#include "tokenizer.h"
+
 /*
  * Adding a new node data type:
  * - parser.h: Define the struct and convenience macro
@@ -13,14 +15,16 @@
  * - parser.c: Add/update a corresponding parser function
  */
 
-typedef enum
-{
+typedef enum {
+  // ast_node_program_t
+  AST_PROGRAM,
+
   /*
    * Declarations
    */
 
-  AST_DECL_VARIABLE,
-  AST_DECL_FUNCTION,
+  AST_DECL_VARIABLE, // ast_node_variable_decl_t
+  AST_DECL_FUNCTION, // ast_node__decl_t
 
   /*
    * Statements
@@ -67,13 +71,18 @@ typedef enum
   AST_EXPR_LOGICAL_OR,
 
   AST_EXPR_ASSIGNMENT,
+} ast_node_type_t;
+
+typedef enum
+{
+  DATA_TYPE_INT,
 }
-ast_node_type_t;
+data_type_t;
 
 // TODO: The relationship between these two members needs to be improved.
 // Currently, it's too easy to make an invalid combination.
 
-typedef struct ast_node_t
+typedef struct
 {
   ast_node_type_t type;
   void *data;
@@ -93,7 +102,7 @@ ast_node_primitive_expr_t;
 
 typedef struct
 {
-  ast_node_t *operand;
+  ast_node_t *operand; // expression
 }
 ast_node_unary_expr_t;
 
@@ -101,7 +110,7 @@ ast_node_unary_expr_t;
 
 typedef struct
 {
-  ast_node_t *left_operand, *right_operand;
+  ast_node_t *left_operand, *right_operand; // expression
 }
 ast_node_binary_expr_t;
 
@@ -109,8 +118,8 @@ ast_node_binary_expr_t;
 
 typedef struct
 {
-  ast_node_t *callee;
-  ast_node_t **arguments;
+  ast_node_t *callee; // expression
+  ast_node_t **arguments; // expression
   int arguments_size, arguments_capacity;
 }
 ast_node_function_call_expr_t;
@@ -119,7 +128,7 @@ ast_node_function_call_expr_t;
 
 typedef struct
 {
-  struct ast_node_t **stmts;
+  ast_node_t **stmts; // ast_node_stmt_t
   int stmts_size, stmts_capacity;
 }
 ast_node_stmt_list_t;
@@ -128,9 +137,40 @@ ast_node_stmt_list_t;
 
 typedef struct
 {
-  ast_node_t *stmt_list, *expr_0;
+  ast_node_t *stmt_list; // ast_node_stmt_list_t
+  ast_node_t *expr_0; // expression
 }
 ast_node_stmt_t;
+
+#define DATA_VARIABLE_DECL(node) ((ast_node_variable_decl_t*)((node)->data))
+
+typedef struct
+{
+  token_t *token_identifier;
+  data_type_t data_type;
+  ast_node_t *initializer; // expression
+}
+ast_node_variable_decl_t;
+
+#define DATA_FUNCTION_DECL(node) ((ast_node_function_decl_t*)((node)->data))
+
+typedef struct
+{
+  token_t *token_identifier;
+  ast_node_t **parameters; // ast_node_variable_decl_t
+  int parameters_size, parameters_capacity;
+  data_type_t return_data_type;
+  ast_node_t *body; // ast_node_stmt_list_t
+}
+ast_node_function_decl_t;
+
+typedef struct
+{
+  ast_node_t **decls; // declaration
+  int decls_size, decls_capacity;
+  data_type_t return_data_type;
+}
+ast_node_program_t;
 
 ast_node_t *parse(void);
 

@@ -141,6 +141,87 @@ static ast_node_t *ast_node_stmt_create(ast_node_type_t type, ast_node_t *stmt_l
   return node;
 }
 
+static ast_node_t *ast_node_variable_decl_create(token_t *token_identifier,
+                                                 data_type_t data_type, ast_node_t *initializer)
+{
+  ast_node_t *node;
+  ast_node_variable_decl_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_DECL_VARIABLE, ast_node_variable_decl_t);
+
+  data->token_identifier = token_identifier;
+  data->data_type = data_type;
+  data->initializer = initializer;
+
+  return node;
+}
+
+static ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
+{
+  ast_node_t *node;
+  ast_node_function_decl_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_DECL_FUNCTION, ast_node_function_decl_t);
+
+  data->token_identifier = token_identifier;
+  data->parameters_capacity = 8;
+  data->parameters = malloc(sizeof(ast_node_t*) * data->parameters_capacity);
+  if (data->parameters == NULL)
+    exit_out_of_memory();
+  data->parameters_size = 0;
+
+  return node;
+}
+
+static void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter)
+{
+  ast_node_function_decl_t *data = node->data;
+
+  if (data->parameters_size == data->parameters_capacity)
+  {
+    data->parameters_capacity *= 2;
+
+    ast_node_t **new_parameters = realloc(data->parameters, sizeof(ast_node_t*) * data->parameters_capacity);
+    if (new_parameters == NULL)
+      exit_out_of_memory();
+
+    data->parameters = new_parameters;
+  }
+
+  data->parameters[data->parameters_size++] = parameter;
+}
+
+static ast_node_t *ast_node_program_create(void)
+{
+  ast_node_t *node;
+  ast_node_program_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_PROGRAM, ast_node_program_t);
+
+  data->decls_capacity = 8;
+  data->decls = malloc(sizeof(ast_node_t*) * data->decls_capacity);
+  if (data->decls == NULL)
+    exit_out_of_memory();
+  data->decls_size = 0;
+
+  return node;
+}
+
+static void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl)
+{
+  ast_node_program_t *data = node->data;
+
+  if (data->decls_size == data->decls_capacity)
+  {
+    data->decls_capacity *= 2;
+
+    ast_node_t **new_decls = realloc(data->decls, sizeof(ast_node_t*) * data->decls_capacity);
+    if (new_decls == NULL)
+      exit_out_of_memory();
+
+    data->decls = new_decls;
+  }
+
+  data->decls[data->decls_size++] = decl;
+}
+
 /*
  * Parser functions
  */
@@ -454,21 +535,100 @@ static ast_node_t *parse_return_stmt(void)
   return ast_node_stmt_create(AST_STMT_RETURN, NULL, node_expr);
 }
 
-ast_node_t *parse(void)
-{
-  return parse_stmt_list();
-}
-
 /*
  * Declarations
  */
 
+static data_type_t parse_data_type(void)
+{
+  token_t *token = token_advance_and_assert(1, TOKEN_KEYWORD_INT);
+
+  switch (token->type)
+  {
+    case TOKEN_KEYWORD_INT:
+      return DATA_TYPE_INT;
+    default:
+      __builtin_unreachable();
+  }
+}
+
 static ast_node_t *parse_variable_decl(void)
 {
-  return NULL;
+  token_advance_and_assert(1, TOKEN_KEYWORD_VAR);
+  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
+  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+  data_type_t data_type = parse_data_type();
+
+  ast_node_t *node_initializer = NULL;
+
+  if (token_advance_and_assert(2, TOKEN_SYMBOL_SEMICOLON, TOKEN_SYMBOL_EQ)->type
+      == TOKEN_SYMBOL_EQ)
+  {
+    node_initializer = parse_expr();
+    token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+  }
+
+  return ast_node_variable_decl_create(token_identifier, data_type, node_initializer);
+}
+
+static ast_node_t *parse_function_parameter(void)
+{
+  token_advance_and_assert(1, TOKEN_KEYWORD_VAR);
+  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
+  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+  data_type_t data_type = parse_data_type();
+
+  return ast_node_variable_decl_create(token_identifier, data_type, NULL);
 }
 
 static ast_node_t *parse_function_decl(void)
 {
-  return NULL;
+  token_advance_and_assert(1, TOKEN_KEYWORD_FN);
+  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
+  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+
+  ast_node_t *node = ast_node_function_decl_create(token_identifier);
+
+  if (token_try_advancing(1, TOKEN_SYMBOL_RPAREN) == NULL)
+  {
+    do
+      ast_node_function_decl_append_parameter(node, parse_function_parameter());
+    while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
+           == TOKEN_SYMBOL_COMMA);
+  }
+
+  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+
+  DATA_FUNCTION_DECL(node)->return_data_type = parse_data_type();
+  DATA_FUNCTION_DECL(node)->body = parse_stmt_list();
+
+  return node;
+}
+
+/*
+ * Program
+ */
+
+ast_node_t *parse(void)
+{
+  ast_node_t *node = ast_node_program_create();
+  token_t *token;
+
+  while ((token = token_peek_next()) != NULL)
+  {
+    switch (token->type)
+    {
+      case TOKEN_KEYWORD_VAR:
+        ast_node_program_append_decl(node, parse_variable_decl());
+        break;
+      case TOKEN_KEYWORD_FN:
+        ast_node_program_append_decl(node, parse_function_decl());
+        break;
+      default:
+        exit_with_error("unexpected token\n");
+        break;
+    }
+  }
+
+  return node;
 }

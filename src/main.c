@@ -83,16 +83,29 @@ static char *symbol_to_string(token_type_t symbol_type)
   }
 }
 
-void print_with_level(char *str, int level)
+static char *data_type_to_string(data_type_t data_type)
 {
-  for (int i = 0; i < level; i++)
-    printf("  ");
-  printf("- %s\n", str);
+  switch (data_type)
+  {
+    case DATA_TYPE_INT:
+      return "int";
+  }
 }
+
+#define PRINT_WITH_LEVEL(level, ...) \
+  do \
+  { \
+    for (int i = 0; i < level; i++) \
+      printf("  "); \
+    printf("- "); \
+    printf(__VA_ARGS__); \
+    printf("\n"); \
+  } \
+  while (0)
 
 #define CASE_UNARY(type, name) \
   case type: { \
-    print_with_level(name, level); \
+    PRINT_WITH_LEVEL(level, name); \
     ast_node_binary_expr_t *data = node->data; \
     print_ast(data->left_operand, level + 1); \
     break; \
@@ -100,7 +113,7 @@ void print_with_level(char *str, int level)
 
 #define CASE_BINARY(type, name) \
   case type: { \
-    print_with_level(name, level); \
+    PRINT_WITH_LEVEL(level, name); \
     ast_node_binary_expr_t *data = node->data; \
     print_ast(data->left_operand, level + 1); \
     print_ast(data->right_operand, level + 1); \
@@ -113,28 +126,26 @@ void print_ast(ast_node_t *node, int level)
   {
     case AST_EXPR_PRIMITIVE: {
       ast_node_primitive_expr_t *data = node->data;
-      char buf[100];
       switch (data->token->type)
       {
         case TOKEN_IDENTIFIER:
-          sprintf(buf, "Identifier %s", data->token->identifier);
+          PRINT_WITH_LEVEL(level, "Identifier %s", data->token->identifier);
           break;
         case TOKEN_CONSTANT:
-          sprintf(buf, "Constant %d", data->token->constant);
+          PRINT_WITH_LEVEL(level, "Constant %d", data->token->constant);
           break;
         default:
           break;
       }
-      print_with_level(buf, level);
       break;
     }
 
     case AST_EXPR_FUNCTION_CALL: {
       ast_node_function_call_expr_t *data = node->data;
-      print_with_level("Function call", level);
-      print_with_level("Callee", level + 1);
+      PRINT_WITH_LEVEL(level, "Function call");
+      PRINT_WITH_LEVEL(level + 1, "Callee");
       print_ast(data->callee, level + 2);
-      print_with_level("Arguments", level + 1);
+      PRINT_WITH_LEVEL(level + 1, "Arguments");
       for (int i = 0; i < data->arguments_size; i++)
         print_ast(data->arguments[i], level + 2);
       break;
@@ -159,35 +170,74 @@ void print_ast(ast_node_t *node, int level)
 
     case AST_STMT_LIST: {
       ast_node_stmt_list_t *data = node->data;
-      print_with_level("Statement list", level);
+      PRINT_WITH_LEVEL(level, "Statement list");
       for (int i = 0; i < data->stmts_size; i++)
         print_ast(data->stmts[i], level + 1);
       break;
     }
 
     case AST_STMT_EXPR: {
-      print_with_level("Expression statement", level);
+      PRINT_WITH_LEVEL(level, "Expression statement");
       print_ast(DATA_STMT(node)->expr_0, level + 1);
       break;
     }
 
     case AST_STMT_IF: {
-      print_with_level("If statement", level);
+      PRINT_WITH_LEVEL(level, "If statement");
       print_ast(DATA_STMT(node)->expr_0, level + 1);
       print_ast(DATA_STMT(node)->stmt_list, level + 1);
       break;
     }
 
     case AST_STMT_WHILE: {
-      print_with_level("While statement", level);
+      PRINT_WITH_LEVEL(level, "While statement");
       print_ast(DATA_STMT(node)->expr_0, level + 1);
       print_ast(DATA_STMT(node)->stmt_list, level + 1);
       break;
     }
 
     case AST_STMT_RETURN: {
-      print_with_level("Return statement", level);
+      PRINT_WITH_LEVEL(level, "Return statement");
       print_ast(DATA_STMT(node)->expr_0, level + 1);
+      break;
+    }
+
+    case AST_DECL_VARIABLE: {
+      ast_node_variable_decl_t *data = node->data;
+      PRINT_WITH_LEVEL(level, "Variable declaration");
+      PRINT_WITH_LEVEL(level, "Identifier: %s", data->token_identifier->identifier);
+      PRINT_WITH_LEVEL(level, "Return type: %s", data_type_to_string(data->data_type));
+
+      if (data->initializer != NULL)
+      {
+        PRINT_WITH_LEVEL(level + 1, "Initializer");
+        print_ast(data->initializer, level + 2);
+      }
+
+      break;
+    }
+
+    case AST_DECL_FUNCTION: {
+      ast_node_function_decl_t *data = node->data;
+      PRINT_WITH_LEVEL(level, "Function declaration");
+      PRINT_WITH_LEVEL(level, "Identifier: %s", data->token_identifier->identifier);
+      PRINT_WITH_LEVEL(level, "Return type: %s", data_type_to_string(data->return_data_type));
+
+      PRINT_WITH_LEVEL(level + 1, "Parameters");
+      for (int i = 0; i < data->parameters_size; i++)
+        print_ast(data->parameters[i], level + 2);
+      print_ast(data->body, level + 1);
+
+      break;
+    }
+
+    case AST_PROGRAM: {
+      ast_node_program_t *data = node->data;
+      PRINT_WITH_LEVEL(level, "Program");
+
+      for (int i = 0; i < data->decls_size; i++)
+        print_ast(data->decls[i], level + 1);
+
       break;
     }
 
