@@ -7,9 +7,8 @@
 static void exit_with_lexical_error(char *s)
 {
   input_char_t last_char = get_last_read_char();
-  exit_with_error("lexical error at '%c' (line %d, column %d):\n%s",
-                  last_char.c,
-                  last_char.line, last_char.column, s);
+  exit_with_error("lexical error at line %d, column %d ('%c'):\n%s",
+                  last_char.line, last_char.column, last_char.c, s);
 }
 
 token_t *tokens;
@@ -76,6 +75,7 @@ static int string_to_keyword(char *s)
     return -1;
 }
 
+// TODO: Isn't the buffer a duplication of lexeme?
 static char *read_keyword_or_identifier(char initial)
 {
   char *buf;
@@ -298,7 +298,7 @@ void tokenize(void)
   while ((c = get_char()) != 0)
   {
     if (is_whitespace(c))
-      continue;
+      goto skip;
 
     if (c == '/')
     {
@@ -311,12 +311,12 @@ void tokenize(void)
         // skipped anyway, so do not unget_char() it
         while ((c = get_char()) != '\n');
 
-        continue;
+        goto skip;
       }
       else if (c == '*')
       {
         skip_multi_line_comment();
-        continue;
+        goto skip;
       }
       else
       {
@@ -356,7 +356,12 @@ void tokenize(void)
     else
       token->type = read_symbol(c);
 
+    if ((token->lexeme = get_and_clear_read_buffer()) == NULL)
+      exit_out_of_memory();
+
     token->char_end = get_last_read_char();
+
+    skip: get_and_clear_read_buffer();
   }
 }
 
@@ -404,7 +409,8 @@ token_t *token_advance_and_assert(int n, ...)
   }
 
   va_end(types);
-  exit_with_error("unexpected token\n");
+  exit_with_error("syntax error at line %d: unexpected token '%s'\n",
+                  token->char_begin.line, token->lexeme);
 }
 
 token_t *token_try_advancing(int n, ...)
@@ -426,4 +432,3 @@ token_t *token_try_advancing(int n, ...)
   va_end(types);
   return NULL;
 }
-

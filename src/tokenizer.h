@@ -62,10 +62,13 @@ token_type_t;
 
 typedef struct
 {
+  token_type_t type;
+
   char *identifier;
   int constant;
-  token_type_t type;
+
   input_char_t char_begin, char_end;
+  char *lexeme;
 }
 token_t;
 
