@@ -4,25 +4,12 @@
 #include <stdarg.h>
 #include "yiche.h"
 
-typedef struct
-{
-  int c, column, line;
-} get_char_history_item_t;
-
-#define GET_CHAR_MAX_HISTORY_SIZE 2
-
-static get_char_history_item_t get_char_history[GET_CHAR_MAX_HISTORY_SIZE + 1] = {
-  { '\0', 0, 1 } // sentinel
-};
-static int get_char_history_index = 0;
-
-#define GET_CHAR_LAST_HISTORY_ITEM (get_char_history[get_char_history_index % (GET_CHAR_MAX_HISTORY_SIZE + 1)])
-
 static void exit_with_lexical_error(char *s)
 {
-  exit_with_error("lexical error at '%c' (line %d, column %d):\n%s",
-                  GET_CHAR_LAST_HISTORY_ITEM.c,
-                  GET_CHAR_LAST_HISTORY_ITEM.line, GET_CHAR_LAST_HISTORY_ITEM.column, s);
+  exit_with_error("lexical error: %s\n", s);
+  /* exit_with_error("lexical error at '%c' (line %d, column %d):\n%s", */
+  /*                 GET_CHAR_LAST_HISTORY_ITEM.c, */
+  /*                 GET_CHAR_LAST_HISTORY_ITEM.line, GET_CHAR_LAST_HISTORY_ITEM.column, s); */
 }
 
 token_t *tokens;
@@ -71,91 +58,6 @@ static void token_append_constant(int constant)
   tokens[tokens_size].type = TOKEN_CONSTANT;
   tokens[tokens_size].constant = constant;
   tokens_size++;
-}
-
-/*
- * Character class
- */
-
-static int is_visible_character(char c)
-{
-  return c >= 33 && c <= 126;
-}
-
-static int is_whitespace(char c)
-{
-  return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-}
-
-static int is_letter(char c)
-{
-  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
-}
-
-static int is_digit(char c)
-{
-  return c >= '0' && c <= '9';
-}
-
-static int is_character(char c)
-{
-  return is_visible_character(c) || is_whitespace(c);
-}
-
-/*
- * Input
- */
-
-static int get_char_backs = 0;
-/* for now, at most two character needs to be buffered. */
-static int get_char_buffer[2];
-static int get_char_buffer_size = 0;
-
-static int get_char(void)
-{
-  if (get_char_backs)
-  {
-    get_char_history_index++;
-    get_char_backs--;
-    return GET_CHAR_LAST_HISTORY_ITEM.c;
-  }
-
-  int c = GET_CHAR_LAST_HISTORY_ITEM.c,
-      column = GET_CHAR_LAST_HISTORY_ITEM.column,
-      line = GET_CHAR_LAST_HISTORY_ITEM.line;
-
-  do
-  {
-    if (c == '\n')
-    {
-      line++;
-      column = 1;
-    }
-    else
-      column++;
-
-    c = fgetc(stdin);
-  }
-  while (c != EOF && !is_character(c));
-
-  get_char_history_index++;
-  GET_CHAR_LAST_HISTORY_ITEM.c = c;
-  GET_CHAR_LAST_HISTORY_ITEM.column = column;
-  GET_CHAR_LAST_HISTORY_ITEM.line = line;
-
-  return c;
-}
-
-static void unget_char()
-{
-  if (get_char_backs == GET_CHAR_MAX_HISTORY_SIZE)
-    exit_with_error("unget_char(): maximum count exceeded");
-
-  if (get_char_history_index < 0)
-    exit_with_error("unget_char(): character to unget");
-
-  get_char_history_index--;
-  get_char_backs++;
 }
 
 /*

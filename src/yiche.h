@@ -6,5 +6,7 @@
 #endif
 
 #include "error.h"
+#include "character.h"
+#include "input.h"
 #include "tokenizer.h"
 #include "parser.h"
