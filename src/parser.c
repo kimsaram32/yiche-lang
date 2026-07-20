@@ -389,6 +389,8 @@ static ast_node_t *parse_stmt_list(void)
     }
   }
 
+  token_advance();
+
   return node;
 }
 
