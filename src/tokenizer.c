@@ -6,58 +6,35 @@
 
 static void exit_with_lexical_error(char *s)
 {
-  exit_with_error("lexical error: %s\n", s);
-  /* exit_with_error("lexical error at '%c' (line %d, column %d):\n%s", */
-  /*                 GET_CHAR_LAST_HISTORY_ITEM.c, */
-  /*                 GET_CHAR_LAST_HISTORY_ITEM.line, GET_CHAR_LAST_HISTORY_ITEM.column, s); */
+  input_char_t last_char = get_last_read_char();
+  exit_with_error("lexical error at '%c' (line %d, column %d):\n%s",
+                  last_char.c,
+                  last_char.line, last_char.column, s);
 }
 
 token_t *tokens;
 int tokens_size;
 static int tokens_capacity = 64;
 
-static void reallocate_tokens_for_next_if_needed(void)
+static token_t *allocate_next_token(void)
 {
-  if (tokens != NULL && tokens_size < tokens_capacity)
-    return;
-
-  tokens_capacity *= 2;
-  token_t *old = tokens;
-  if ((tokens = realloc(tokens, sizeof(token_t) * tokens_capacity)) == NULL)
+  if (tokens == NULL)
   {
-    free(old);
-    exit_out_of_memory();
+    if ((tokens = malloc(sizeof(token_t) * tokens_capacity)) == NULL)
+      exit_out_of_memory();
   }
-}
+  else if (tokens_size == tokens_capacity)
+  {
+    tokens_capacity *= 2;
+    token_t *old = tokens;
+    if ((tokens = realloc(tokens, sizeof(token_t) * tokens_capacity)) == NULL)
+    {
+      free(old);
+      exit_out_of_memory();
+    }
+  }
 
-static void token_append_identifier(char *identifier)
-{
-  reallocate_tokens_for_next_if_needed();
-  tokens[tokens_size].type = TOKEN_IDENTIFIER;
-  tokens[tokens_size].identifier = identifier;
-  tokens_size++;
-}
-
-static void token_append_symbol(token_type_t symbol_type)
-{
-  reallocate_tokens_for_next_if_needed();
-  tokens[tokens_size].type = symbol_type;
-  tokens_size++;
-}
-
-static void token_append_keyword(token_type_t keyword_type)
-{
-  reallocate_tokens_for_next_if_needed();
-  tokens[tokens_size].type = keyword_type;
-  tokens_size++;
-}
-
-static void token_append_constant(int constant)
-{
-  reallocate_tokens_for_next_if_needed();
-  tokens[tokens_size].type = TOKEN_CONSTANT;
-  tokens[tokens_size].constant = constant;
-  tokens_size++;
+  return (tokens + (tokens_size++));
 }
 
 /*
@@ -68,7 +45,7 @@ static void skip_multi_line_comment(void)
 {
   int c, can_exit = 0;
 
-  while ((c = get_char()) != EOF)
+  while ((c = get_char()) != 0)
   {
     if (c == '*')
       can_exit = 1;
@@ -123,7 +100,7 @@ static char *read_keyword_or_identifier(char initial)
     }
   }
 
-  unget_char(); // note: the char may be EOF (also applies for other read_ functions)
+  unget_char(); // note: may unget even if EOF is reached (also applies for other read_ functions)
   buf[i] = '\0';
 
   return buf;
@@ -205,7 +182,7 @@ static token_type_t read_symbol(char initial)
   char *buf = calloc(3, sizeof(char));
   buf[0] = initial;
 
-  if ((buf[1] = get_char()) != EOF)
+  if ((buf[1] = get_char()) != 0)
   {
     int t = get_symbol_2(buf);
     if (t != -1)
@@ -318,10 +295,38 @@ static int read_character_constant(void)
 void tokenize(void)
 {
   int c, prev;
-  while ((c = get_char()) != EOF)
+  while ((c = get_char()) != 0)
   {
     if (is_whitespace(c))
       continue;
+
+    if (c == '/')
+    {
+      prev = c;
+      c = get_char();
+
+      if (c == '/')
+      {
+        // technically '\n' is not part of <single_line_comment>, but it'll get
+        // skipped anyway, so do not unget_char() it
+        while ((c = get_char()) != '\n');
+
+        continue;
+      }
+      else if (c == '*')
+      {
+        skip_multi_line_comment();
+        continue;
+      }
+      else
+      {
+        c = prev;
+        unget_char();
+      }
+    }
+
+    token_t *token = allocate_next_token();
+    token->char_begin = get_last_read_char();
 
     if (is_letter(c))
     {
@@ -331,35 +336,27 @@ void tokenize(void)
 
       int keyword_type = string_to_keyword(keyword_or_identifier);
       if (keyword_type == -1)
-        token_append_identifier(keyword_or_identifier);
+      {
+        token->type = TOKEN_IDENTIFIER;
+        token->identifier = keyword_or_identifier;
+      }
       else
-        token_append_keyword(keyword_type);
+        token->type = keyword_type;
     }
     else if (is_digit(c))
-      token_append_constant(read_numeric_constant(c));
-    else if (c == '\'')
-      token_append_constant(read_character_constant());
-    else if (c == '/')
     {
-      prev = c;
-      c = get_char();
-
-      if (c == '/')
-      {
-        while ((c = get_char()) != '\n');
-        // technically '\n' is not part of <single_line_comment>, but it'll get
-        // skipped anyway, so do not unget_char() it
-      }
-      else if (c == '*')
-        skip_multi_line_comment();
-      else
-      {
-        unget_char();
-        token_append_symbol(read_symbol(prev));
-      }
+      token->type = TOKEN_CONSTANT;
+      token->constant = read_numeric_constant(c);
+    }
+    else if (c == '\'')
+    {
+      token->type = TOKEN_CONSTANT;
+      token->constant = read_character_constant();
     }
     else
-      token_append_symbol(read_symbol(c));
+      token->type = read_symbol(c);
+
+    token->char_end = get_last_read_char();
   }
 }
 

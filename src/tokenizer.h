@@ -2,6 +2,7 @@
 #define _TOKENIZER_H
 
 #include <stdio.h>
+#include "input.h"
 
 /*
  * Token type
@@ -64,6 +65,7 @@ typedef struct
   char *identifier;
   int constant;
   token_type_t type;
+  input_char_t char_begin, char_end;
 }
 token_t;
 
