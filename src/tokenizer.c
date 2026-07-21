@@ -361,7 +361,7 @@ void tokenize(void)
 
     token->char_end = get_last_read_char();
 
-    skip: get_and_clear_read_buffer();
+    skip: free(get_and_clear_read_buffer());
   }
 }
 
