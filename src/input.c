@@ -21,12 +21,12 @@ static int input_backs = 0;
 static char input_read_buffer[INPUT_MAX_READ_BUFFER_SIZE];
 static int input_read_buffer_index = 0;
 
-input_char_t get_last_read_char(void)
+input_char_t input_get_last_read_char(void)
 {
   return INPUT_LAST_HISTORY_ITEM;
 }
 
-unsigned char get_char(void)
+unsigned char input_get_char(void)
 {
   if (input_backs)
   {
@@ -63,20 +63,20 @@ unsigned char get_char(void)
   // input buffer
 
   if (input_read_buffer_index == INPUT_MAX_READ_BUFFER_SIZE)
-    exit_with_error("get_char(): maximum size for read buffer exceeded");
+    exit_with_error("input_get_char(): maximum size for read buffer exceeded");
 
   input_read_buffer[input_read_buffer_index++] = c;
 
   return c;
 }
 
-void unget_char(void)
+void input_unget_char(void)
 {
   if (input_backs == INPUT_MAX_HISTORY_SIZE)
-    exit_with_error("unget_char(): maximum count exceeded");
+    exit_with_error("input_unget_char(): maximum count exceeded");
 
   if (input_history_index < 0)
-    exit_with_error("unget_char(): no character to unget");
+    exit_with_error("input_unget_char(): no character to unget");
 
   input_history_index--;
   input_backs++;
@@ -85,7 +85,7 @@ void unget_char(void)
     input_read_buffer_index--;
 }
 
-char *get_and_clear_read_buffer(void)
+char *input_get_and_clear_read_buffer(void)
 {
   char *buf = malloc(sizeof(char) * (input_read_buffer_index + 1));
   if (buf == NULL)
