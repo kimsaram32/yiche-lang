@@ -24,6 +24,6 @@ void *vector_next_element(vector_t *vector);
 
 vector_t *vector_pointer_create(int capacity);
 
-int vector_pointer_append(vector_t *pv, void *elt);
+int vector_pointer_append(vector_t *vector, void *elt);
 
 #endif

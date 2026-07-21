@@ -23,16 +23,13 @@ input_char_t input_get_last_char(void)
   return VECTOR_ARR(input_buffer, input_char_t)[input_next_index - 1];
 }
 
-void append_next_char_from_file(void)
+static void append_next_char_from_file(void)
 {
   input_char_t *next = vector_next_element(input_buffer);
   if (next == NULL)
     exit_out_of_memory();
 
-  input_char_t file_char = file_next_char();
-  next->c = file_char.c;
-  next->line = file_char.line;
-  next->column = file_char.column;
+  *next = file_next_char();
 }
 
 unsigned char input_advance_char(void)
