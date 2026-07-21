@@ -309,7 +309,7 @@ void tokenize(void)
       {
         // technically '\n' is not part of <single_line_comment>, but it'll get
         // skipped anyway, so do not unget_char() it
-        while ((c = get_char()) != '\n');
+        while ((c = get_char()) != 0 && c != '\n');
 
         goto skip;
       }
