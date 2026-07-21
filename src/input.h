@@ -3,21 +3,23 @@
 
 typedef struct
 {
-  unsigned char c;
+  unsigned char c; // 0 is used for marking EOF.
   int line, column;
 }
 input_char_t;
 
-// c == 0 if EOF is reached.
-input_char_t input_get_last_read_char(void);
+// 2026-07-21 The function 'input_get_last_char' could be removed by making
+// 'input_advance_char' and 'input_peek_char' return the full input_char_t
+// struct. But most callers only need the raw character, and writing .c
+// everywhere would make the code verbose. Therefore, I separated the function for
+// retrieving the full information.
 
-// returns 0 if EOF is reached.
-unsigned char input_get_char(void);
+input_char_t input_get_last_char(void);
+unsigned char input_advance_char(void);
+unsigned char input_peek_char(int n);
 
-void input_unget_char(void);
-
-// the read buffer changes as input_get_char()/input_unget_char() are called. return the
+// the buffer changes as input_advance_char() is called. return the
 // accumulated string and clear the buffer.
-char *input_get_and_clear_read_buffer(void);
+char *input_get_and_clear_buffer(void);
 
 #endif

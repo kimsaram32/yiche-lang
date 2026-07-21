@@ -2,98 +2,90 @@
 #include <string.h>
 #include "yiche.h"
 
-// TODO: Read/history buffers seem to be duplicated.
+#define INPUT_MAX_BUFFER_SIZE 127
 
-#define INPUT_MAX_HISTORY_SIZE 2
+static input_char_t input_buffer[INPUT_MAX_BUFFER_SIZE];
 
-// For now, at most two character needs to be buffered.
+static int input_next_index = 0;
+static int input_next_read_index = 0;
 
-static input_char_t input_history[INPUT_MAX_HISTORY_SIZE + 1] = {
-  { .c = 0, .line = 1, .column = 0 } // sentinel
-};
-static int input_history_index = 0;
-static int input_backs = 0;
+static input_char_t file_next_char(void);
 
-#define INPUT_LAST_HISTORY_ITEM (input_history[input_history_index % (INPUT_MAX_HISTORY_SIZE + 1)])
-
-#define INPUT_MAX_READ_BUFFER_SIZE 127
-
-static char input_read_buffer[INPUT_MAX_READ_BUFFER_SIZE];
-static int input_read_buffer_index = 0;
-
-input_char_t input_get_last_read_char(void)
+input_char_t input_get_last_char(void)
 {
-  return INPUT_LAST_HISTORY_ITEM;
+  if (input_next_index == 0)
+    exit_with_error("input_get_last_char(): no last read character");
+
+  return input_buffer[input_next_index - 1];
 }
 
-unsigned char input_get_char(void)
+unsigned char input_advance_char(void)
 {
-  if (input_backs)
-  {
-    input_history_index++;
-    input_backs--;
-    return INPUT_LAST_HISTORY_ITEM.c;
-  }
+  if (input_next_index == INPUT_MAX_BUFFER_SIZE)
+    exit_with_error("input_advance_char(): maximum size for input buffer exceeded");
 
-  int c = INPUT_LAST_HISTORY_ITEM.c,
-      column = INPUT_LAST_HISTORY_ITEM.column,
-      line = INPUT_LAST_HISTORY_ITEM.line;
+  if (input_next_index == input_next_read_index)
+    input_buffer[input_next_read_index++] = file_next_char();
+
+  return input_buffer[input_next_index++].c;
+}
+
+unsigned char input_peek_char(int n)
+{
+  int peeking = input_next_index + n - 1;
+
+  if (peeking >= INPUT_MAX_BUFFER_SIZE)
+    exit_with_error("input_pepek_char(): maximum size for input buffer exceeded");
+
+  while (peeking >= input_next_read_index)
+    input_buffer[input_next_read_index++] = file_next_char();
+
+  return input_buffer[peeking].c;
+}
+
+char *input_get_and_clear_buffer(void)
+{
+  int i;
+  char *buf = malloc(sizeof(char) * (input_next_index + 1));
+  if (buf == NULL)
+    return NULL;
+
+  for (i = 0; i < input_next_index; i++)
+    buf[i] = input_buffer[i].c;
+  buf[input_next_index] = '\0';
+
+  for (i = 0; input_next_index < input_next_read_index; i++, input_next_index++)
+    input_buffer[i] = input_buffer[input_next_index];
+
+  input_next_index = 0;
+  input_next_read_index = i;
+
+  return buf;
+}
+
+static input_char_t file_last_char = {
+  .c = 0, .line = 1, .column = 0, // sentinel
+};
+
+static input_char_t file_next_char(void)
+{
+  int c = file_last_char.c;
 
   do
   {
     if (c == '\n')
     {
-      line++;
-      column = 1;
+      file_last_char.line++;
+      file_last_char.column = 1;
     }
     else
-      column++;
+      file_last_char.column++;
 
     c = fgetc(stdin);
   }
   while (c != EOF && !is_character(c));
 
-  c = c == EOF ? 0 : c;
+  file_last_char.c = c == EOF ? 0 : c;
 
-  input_history_index++;
-  INPUT_LAST_HISTORY_ITEM.c = c;
-  INPUT_LAST_HISTORY_ITEM.column = column;
-  INPUT_LAST_HISTORY_ITEM.line = line;
-
-  // input buffer
-
-  if (input_read_buffer_index == INPUT_MAX_READ_BUFFER_SIZE)
-    exit_with_error("input_get_char(): maximum size for read buffer exceeded");
-
-  input_read_buffer[input_read_buffer_index++] = c;
-
-  return c;
-}
-
-void input_unget_char(void)
-{
-  if (input_backs == INPUT_MAX_HISTORY_SIZE)
-    exit_with_error("input_unget_char(): maximum count exceeded");
-
-  if (input_history_index < 0)
-    exit_with_error("input_unget_char(): no character to unget");
-
-  input_history_index--;
-  input_backs++;
-
-  if (input_read_buffer_index > 0)
-    input_read_buffer_index--;
-}
-
-char *input_get_and_clear_read_buffer(void)
-{
-  char *buf = malloc(sizeof(char) * (input_read_buffer_index + 1));
-  if (buf == NULL)
-    return NULL;
-
-  strncpy(buf, input_read_buffer, input_read_buffer_index);
-  buf[input_read_buffer_index] = '\0';
-
-  input_read_buffer_index = 0;
-  return buf;
+  return file_last_char;
 }

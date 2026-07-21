@@ -6,7 +6,7 @@
 
 static void exit_with_lexical_error(char *s)
 {
-  input_char_t last_char = input_get_last_read_char();
+  input_char_t last_char = input_get_last_char();
   exit_with_error("lexical error at line %d, column %d ('%c'):\n%s",
                   last_char.line, last_char.column, last_char.c, s);
 }
@@ -44,7 +44,7 @@ static void skip_multi_line_comment(void)
 {
   int c, can_exit = 0;
 
-  while ((c = input_get_char()) != 0)
+  while ((c = input_advance_char()) != 0)
   {
     if (c == '*')
       can_exit = 1;
@@ -86,8 +86,9 @@ static char *read_keyword_or_identifier(char initial)
 
   buf[0] = initial;
 
-  while (is_letter((buf[i] = input_get_char())) || is_digit(buf[i]))
+  while (is_letter((buf[i] = input_peek_char(1))) || is_digit(buf[i]))
   {
+    input_advance_char();
     if (++i == buf_capacity)
     {
       buf_capacity *= 2;
@@ -100,7 +101,6 @@ static char *read_keyword_or_identifier(char initial)
     }
   }
 
-  input_unget_char(); // note: may unget even if EOF is reached (also applies for other read_ functions)
   buf[i] = '\0';
 
   return buf;
@@ -182,12 +182,14 @@ static token_type_t read_symbol(char initial)
   char *buf = calloc(3, sizeof(char));
   buf[0] = initial;
 
-  if ((buf[1] = input_get_char()) != 0)
+  if ((buf[1] = input_peek_char(1)) != 0)
   {
     int t = get_symbol_2(buf);
     if (t != -1)
+    {
+      input_advance_char();
       return t;
-    input_unget_char();
+    }
   }
 
   return type;
@@ -200,43 +202,37 @@ static int is_hexadecimal_digit(char c)
 
 static int read_numeric_constant(char initial)
 {
-  int val = 0, c, p;
+  int val = 0, c;
 
-  if (initial >= '1' && initial <= '9') // (1) decimal constant greater than 0
+  if (initial >= '1' && initial <= '9')
   {
-    c = initial;
+    // decimal constant greater than 0
+    val = val * 10 + initial - '0';
 
-    do
+    while (is_digit((c = input_peek_char(1))))
+    {
+      input_advance_char();
       val = val * 10 + c - '0';
-    while (is_digit((c = input_get_char())));
+    }
   }
-  else if ((c = input_get_char()) == 'x' || c == 'X') // may be a hexadecimal constant
+  else if (((c = input_peek_char(1)) == 'x' || c == 'X') && is_hexadecimal_digit(input_peek_char(2)))
   {
-    p = c;
-
-    if (is_hexadecimal_digit((c = input_get_char()))) // (2) hexadecimal constant
+    // hexadecimal constant
+    input_advance_char();
+    while (is_hexadecimal_digit((c = input_peek_char(1))))
     {
-      do
-      {
-        val *= 16;
-        if (c >= 'a')
-          val += c - 'a' + 10;
-        else if (c >= 'A')
-          val += c - 'A' + 10;
-        else
-          val += c - '0';
-      }
-      while (is_hexadecimal_digit((c = input_get_char())));
-    }
-    else // (3) decimal constant 0
-    {
-      input_unget_char();
-      c = p;
-    }
-  }
-  // (3) decimal constant 0
+      input_advance_char();
 
-  input_unget_char(); // in all cases, we read one more character
+      val *= 16;
+      if (c >= 'a')
+        val += c - 'a' + 10;
+      else if (c >= 'A')
+        val += c - 'A' + 10;
+      else
+        val += c - '0';
+    }
+  } // else: decimal constant zero
+
   return val;
 }
 
@@ -272,13 +268,13 @@ static int get_escape_character_value(char c)
 
 static int read_character_constant(void)
 {
-  int c = input_get_char(), val;
+  int c = input_advance_char(), val;
 
   if (c == '\'')
     exit_with_lexical_error("empty character constant '' not allowed");
   else if (c == '\\')
   {
-    if ((val = get_escape_character_value(input_get_char())) == -1)
+    if ((val = get_escape_character_value(input_advance_char())) == -1)
       exit_with_lexical_error("invalid escape sequence");
   }
   else if (is_visible_character(c) || c == ' ' || c == '\t')
@@ -286,7 +282,7 @@ static int read_character_constant(void)
   else
     exit_with_lexical_error("invalid character constant sequence");
 
-  if (input_get_char() != '\'')
+  if (input_advance_char() != '\'')
     exit_with_lexical_error("invalid character constant sequence");
 
   return val;
@@ -294,39 +290,34 @@ static int read_character_constant(void)
 
 void tokenize(void)
 {
-  int c, prev;
-  while ((c = input_get_char()) != 0)
+  int c, c2;
+  while ((c = input_advance_char()) != 0)
   {
     if (is_whitespace(c))
       goto skip;
 
     if (c == '/')
     {
-      prev = c;
-      c = input_get_char();
+      c2 = input_peek_char(1);
 
-      if (c == '/')
+      if (c2 == '/')
       {
         // technically '\n' is not part of <single_line_comment>, but it'll get
         // skipped anyway, so do not input_unget_char() it
-        while ((c = input_get_char()) != 0 && c != '\n');
+        while ((c = input_advance_char()) != 0 && c != '\n');
 
         goto skip;
       }
-      else if (c == '*')
+      else if (c2 == '*')
       {
+        input_advance_char();
         skip_multi_line_comment();
         goto skip;
-      }
-      else
-      {
-        c = prev;
-        input_unget_char();
       }
     }
 
     token_t *token = allocate_next_token();
-    token->char_begin = input_get_last_read_char();
+    token->char_begin = input_get_last_char();
 
     if (is_letter(c))
     {
@@ -356,12 +347,13 @@ void tokenize(void)
     else
       token->type = read_symbol(c);
 
-    if ((token->lexeme = input_get_and_clear_read_buffer()) == NULL)
+    token->char_end = input_get_last_char();
+
+    if ((token->lexeme = input_get_and_clear_buffer()) == NULL)
       exit_out_of_memory();
+    continue;
 
-    token->char_end = input_get_last_read_char();
-
-    skip: free(input_get_and_clear_read_buffer());
+    skip: free(input_get_and_clear_buffer());
   }
 }
 
