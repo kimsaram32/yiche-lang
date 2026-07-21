@@ -9,7 +9,7 @@
 // For now, at most two character needs to be buffered.
 
 static input_char_t input_history[INPUT_MAX_HISTORY_SIZE + 1] = {
-  { 0, 1, 1 } // sentinel
+  { .c = 0, .line = 1, .column = 0 } // sentinel
 };
 static int input_history_index = 0;
 static int input_backs = 0;
