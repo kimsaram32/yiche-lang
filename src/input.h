@@ -8,6 +8,8 @@ typedef struct
 }
 input_char_t;
 
+void input_init(void);
+
 // 2026-07-21 The function 'input_get_last_char' could be removed by making
 // 'input_advance_char' and 'input_peek_char' return the full input_char_t
 // struct. But most callers only need the raw character, and writing .c

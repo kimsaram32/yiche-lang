@@ -119,8 +119,7 @@ ast_node_binary_expr_t;
 typedef struct
 {
   ast_node_t *callee; // expression
-  ast_node_t **arguments; // expression
-  int arguments_size, arguments_capacity;
+  VECTOR_T(ast_node_t*) *arguments; // expression
 }
 ast_node_function_call_expr_t;
 
@@ -128,8 +127,7 @@ ast_node_function_call_expr_t;
 
 typedef struct
 {
-  ast_node_t **stmts; // ast_node_stmt_t
-  int stmts_size, stmts_capacity;
+  VECTOR_T(ast_node_t*) *stmts; // ast_node_stmt_t
 }
 ast_node_stmt_list_t;
 
@@ -157,17 +155,17 @@ ast_node_variable_decl_t;
 typedef struct
 {
   token_t *token_identifier;
-  ast_node_t **parameters; // ast_node_variable_decl_t
-  int parameters_size, parameters_capacity;
+  VECTOR_T(ast_node_t*) *parameters; // ast_node_variable_decl_t
   data_type_t return_data_type;
   ast_node_t *body; // ast_node_stmt_list_t
 }
 ast_node_function_decl_t;
 
+#define DATA_PROGRAM(node) ((ast_node_program_t*)((node)->data))
+
 typedef struct
 {
-  ast_node_t **decls; // declaration
-  int decls_size, decls_capacity;
+  VECTOR_T(ast_node_t*) *decls; // declaration
   data_type_t return_data_type;
 }
 ast_node_program_t;

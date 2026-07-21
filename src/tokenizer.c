@@ -11,30 +11,7 @@ static void exit_with_lexical_error(char *s)
                   last_char.line, last_char.column, last_char.c, s);
 }
 
-token_t *tokens;
-int tokens_size;
-static int tokens_capacity = 64;
-
-static token_t *allocate_next_token(void)
-{
-  if (tokens == NULL)
-  {
-    if ((tokens = malloc(sizeof(token_t) * tokens_capacity)) == NULL)
-      exit_out_of_memory();
-  }
-  else if (tokens_size == tokens_capacity)
-  {
-    tokens_capacity *= 2;
-    token_t *old = tokens;
-    if ((tokens = realloc(tokens, sizeof(token_t) * tokens_capacity)) == NULL)
-    {
-      free(old);
-      exit_out_of_memory();
-    }
-  }
-
-  return (tokens + (tokens_size++));
-}
+VECTOR_T(token_t) *tokens;
 
 /*
  * Tokenizing
@@ -290,6 +267,8 @@ static int read_character_constant(void)
 
 void tokenize(void)
 {
+  tokens = vector_create(sizeof(token_t), 64);
+
   int c, c2;
   while ((c = input_advance_char()) != 0)
   {
@@ -316,7 +295,9 @@ void tokenize(void)
       }
     }
 
-    token_t *token = allocate_next_token();
+    token_t *token = vector_next_element(tokens);
+    if (token == NULL)
+      exit_out_of_memory();
     token->char_begin = input_get_last_char();
 
     if (is_letter(c))
@@ -365,16 +346,18 @@ static int token_next_pos = 0;
 
 token_t *token_advance(void)
 {
-  if (token_next_pos == tokens_size)
+  token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
+  if (token_next_pos == tokens->length)
     return NULL;
-  return &tokens[token_next_pos++];
+  return &tokens_arr[token_next_pos++];
 }
 
 token_t *token_peek_next(void)
 {
-  if (token_next_pos == tokens_size)
+  token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
+  if (token_next_pos == tokens->length)
     return NULL;
-  return &tokens[token_next_pos];
+  return &tokens_arr[token_next_pos];
 }
 
 void token_unget(void)

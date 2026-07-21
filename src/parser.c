@@ -68,31 +68,17 @@ static ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
   AST_NODE_CREATE_WITH_DATA(node, data, AST_EXPR_FUNCTION_CALL, ast_node_function_call_expr_t);
 
   data->callee = callee;
-  data->arguments_capacity = 8;
-  data->arguments = malloc(sizeof(ast_node_t*) * data->arguments_capacity);
+  data->arguments = vector_pointer_create(8);
   if (data->arguments == NULL)
     exit_out_of_memory();
-  data->arguments_size = 0;
 
   return node;
 }
 
 static void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg)
 {
-  ast_node_function_call_expr_t *data = node->data;
-
-  if (data->arguments_size == data->arguments_capacity)
-  {
-    data->arguments_capacity *= 2;
-
-    ast_node_t **new_arguments = realloc(data->arguments, sizeof(ast_node_t*) * data->arguments_capacity);
-    if (new_arguments == NULL)
-      exit_out_of_memory();
-
-    data->arguments = new_arguments;
-  }
-
-  data->arguments[data->arguments_size++] = arg;
+  if (!vector_pointer_append(DATA_FUNCTION_CALL_EXPR(node)->arguments, arg))
+    exit_out_of_memory();
 }
 
 static ast_node_t *ast_node_stmt_list_create(void)
@@ -101,31 +87,17 @@ static ast_node_t *ast_node_stmt_list_create(void)
   ast_node_stmt_list_t *data;
   AST_NODE_CREATE_WITH_DATA(node, data, AST_STMT_LIST, ast_node_stmt_list_t);
 
-  data->stmts_capacity = 8;
-  data->stmts = malloc(sizeof(ast_node_t*) * data->stmts_capacity);
+  data->stmts = vector_pointer_create(8);
   if (data->stmts == NULL)
     exit_out_of_memory();
-  data->stmts_size = 0;
 
   return node;
 }
 
 static void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt)
 {
-  ast_node_stmt_list_t *data = node->data;
-
-  if (data->stmts_size == data->stmts_capacity)
-  {
-    data->stmts_capacity *= 2;
-
-    ast_node_t **new_stmts = realloc(data->stmts, sizeof(ast_node_t*) * data->stmts_capacity);
-    if (new_stmts == NULL)
-      exit_out_of_memory();
-
-    data->stmts = new_stmts;
-  }
-
-  data->stmts[data->stmts_size++] = stmt;
+  if (!vector_pointer_append(DATA_STMT_LIST(node)->stmts, stmt))
+    exit_out_of_memory();
 }
 
 static ast_node_t *ast_node_stmt_create(ast_node_type_t type, ast_node_t *stmt_list,
@@ -162,31 +134,17 @@ static ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
   AST_NODE_CREATE_WITH_DATA(node, data, AST_DECL_FUNCTION, ast_node_function_decl_t);
 
   data->token_identifier = token_identifier;
-  data->parameters_capacity = 8;
-  data->parameters = malloc(sizeof(ast_node_t*) * data->parameters_capacity);
+  data->parameters = vector_pointer_create(8);
   if (data->parameters == NULL)
     exit_out_of_memory();
-  data->parameters_size = 0;
 
   return node;
 }
 
 static void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter)
 {
-  ast_node_function_decl_t *data = node->data;
-
-  if (data->parameters_size == data->parameters_capacity)
-  {
-    data->parameters_capacity *= 2;
-
-    ast_node_t **new_parameters = realloc(data->parameters, sizeof(ast_node_t*) * data->parameters_capacity);
-    if (new_parameters == NULL)
-      exit_out_of_memory();
-
-    data->parameters = new_parameters;
-  }
-
-  data->parameters[data->parameters_size++] = parameter;
+  if (!vector_pointer_append(DATA_FUNCTION_DECL(node)->parameters, parameter))
+    exit_out_of_memory();
 }
 
 static ast_node_t *ast_node_program_create(void)
@@ -195,31 +153,17 @@ static ast_node_t *ast_node_program_create(void)
   ast_node_program_t *data;
   AST_NODE_CREATE_WITH_DATA(node, data, AST_PROGRAM, ast_node_program_t);
 
-  data->decls_capacity = 8;
-  data->decls = malloc(sizeof(ast_node_t*) * data->decls_capacity);
+  data->decls = vector_pointer_create(8);
   if (data->decls == NULL)
     exit_out_of_memory();
-  data->decls_size = 0;
 
   return node;
 }
 
 static void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl)
 {
-  ast_node_program_t *data = node->data;
-
-  if (data->decls_size == data->decls_capacity)
-  {
-    data->decls_capacity *= 2;
-
-    ast_node_t **new_decls = realloc(data->decls, sizeof(ast_node_t*) * data->decls_capacity);
-    if (new_decls == NULL)
-      exit_out_of_memory();
-
-    data->decls = new_decls;
-  }
-
-  data->decls[data->decls_size++] = decl;
+  if (!vector_pointer_append(DATA_PROGRAM(node)->decls, decl))
+    exit_out_of_memory();
 }
 
 /*

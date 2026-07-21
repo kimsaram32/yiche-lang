@@ -4,43 +4,53 @@
 
 #define INPUT_MAX_BUFFER_SIZE 127
 
-static input_char_t input_buffer[INPUT_MAX_BUFFER_SIZE];
+static VECTOR_T(input_char_t) *input_buffer = NULL;
 
 static int input_next_index = 0;
-static int input_next_read_index = 0;
 
 static input_char_t file_next_char(void);
+
+void input_init(void)
+{
+  input_buffer = vector_create(sizeof(input_char_t), 128);
+}
 
 input_char_t input_get_last_char(void)
 {
   if (input_next_index == 0)
     exit_with_error("input_get_last_char(): no last read character");
 
-  return input_buffer[input_next_index - 1];
+  return VECTOR_ARR(input_buffer, input_char_t)[input_next_index - 1];
+}
+
+void append_next_char_from_file(void)
+{
+  input_char_t *next = vector_next_element(input_buffer);
+  if (next == NULL)
+    exit_out_of_memory();
+
+  input_char_t file_char = file_next_char();
+  next->c = file_char.c;
+  next->line = file_char.line;
+  next->column = file_char.column;
 }
 
 unsigned char input_advance_char(void)
 {
-  if (input_next_index == INPUT_MAX_BUFFER_SIZE)
-    exit_with_error("input_advance_char(): maximum size for input buffer exceeded");
+  if (input_next_index == input_buffer->length)
+    append_next_char_from_file();
 
-  if (input_next_index == input_next_read_index)
-    input_buffer[input_next_read_index++] = file_next_char();
-
-  return input_buffer[input_next_index++].c;
+  return VECTOR_ARR(input_buffer, input_char_t)[input_next_index++].c;
 }
 
 unsigned char input_peek_char(int n)
 {
   int peeking = input_next_index + n - 1;
 
-  if (peeking >= INPUT_MAX_BUFFER_SIZE)
-    exit_with_error("input_pepek_char(): maximum size for input buffer exceeded");
+  while (peeking >= input_buffer->length)
+    append_next_char_from_file();
 
-  while (peeking >= input_next_read_index)
-    input_buffer[input_next_read_index++] = file_next_char();
-
-  return input_buffer[peeking].c;
+  return VECTOR_ARR(input_buffer, input_char_t)[peeking].c;
 }
 
 char *input_get_and_clear_buffer(void)
@@ -50,15 +60,17 @@ char *input_get_and_clear_buffer(void)
   if (buf == NULL)
     return NULL;
 
+  input_char_t *input_buffer_arr = VECTOR_ARR(input_buffer, input_char_t);
+
   for (i = 0; i < input_next_index; i++)
-    buf[i] = input_buffer[i].c;
+    buf[i] = input_buffer_arr[i].c;
   buf[input_next_index] = '\0';
 
-  for (i = 0; input_next_index < input_next_read_index; i++, input_next_index++)
-    input_buffer[i] = input_buffer[input_next_index];
+  for (i = 0; input_next_index < input_buffer->length; i++, input_next_index++)
+    input_buffer_arr[i] = input_buffer_arr[input_next_index];
 
   input_next_index = 0;
-  input_next_read_index = i;
+  input_buffer->length = i;
 
   return buf;
 }

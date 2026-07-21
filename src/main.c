@@ -146,8 +146,8 @@ void print_ast(ast_node_t *node, int level)
       PRINT_WITH_LEVEL(level + 1, "Callee");
       print_ast(data->callee, level + 2);
       PRINT_WITH_LEVEL(level + 1, "Arguments");
-      for (int i = 0; i < data->arguments_size; i++)
-        print_ast(data->arguments[i], level + 2);
+      for (int i = 0; i < data->arguments->length; i++)
+        print_ast(VECTOR_ARR(data->arguments, ast_node_t*)[i], level + 2);
       break;
     }
 
@@ -171,8 +171,8 @@ void print_ast(ast_node_t *node, int level)
     case AST_STMT_LIST: {
       ast_node_stmt_list_t *data = node->data;
       PRINT_WITH_LEVEL(level, "Statement list");
-      for (int i = 0; i < data->stmts_size; i++)
-        print_ast(data->stmts[i], level + 1);
+      for (int i = 0; i < data->stmts->length; i++)
+        print_ast(VECTOR_ARR(data->stmts, ast_node_t*)[i], level + 1);
       break;
     }
 
@@ -224,8 +224,8 @@ void print_ast(ast_node_t *node, int level)
       PRINT_WITH_LEVEL(level, "Return type: %s", data_type_to_string(data->return_data_type));
 
       PRINT_WITH_LEVEL(level + 1, "Parameters");
-      for (int i = 0; i < data->parameters_size; i++)
-        print_ast(data->parameters[i], level + 2);
+      for (int i = 0; i < data->parameters->length; i++)
+        print_ast(VECTOR_ARR(data->parameters, ast_node_t*)[i], level + 2);
       print_ast(data->body, level + 1);
 
       break;
@@ -235,8 +235,8 @@ void print_ast(ast_node_t *node, int level)
       ast_node_program_t *data = node->data;
       PRINT_WITH_LEVEL(level, "Program");
 
-      for (int i = 0; i < data->decls_size; i++)
-        print_ast(data->decls[i], level + 1);
+      for (int i = 0; i < data->decls->length; i++)
+        print_ast(VECTOR_ARR(data->decls, ast_node_t*)[i], level + 1);
 
       break;
     }
@@ -250,20 +250,25 @@ void print_ast(ast_node_t *node, int level)
 
 int main(void)
 {
+  input_init();
+
   printf("TOKENIZING\n");
 
   tokenize();
 
-  for (int i = 0; i < tokens_size; i++)
+  token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
+
+  for (int i = 0; i < tokens->length; i++)
   {
-    if (tokens[i].type == TOKEN_IDENTIFIER)
-      printf("identifier: %s\n", tokens[i].identifier);
-    else if (tokens[i].type == TOKEN_CONSTANT)
-      printf("constant: %d\n", tokens[i].constant);
-    else if (IS_KEYWORD(tokens[i]))
-      printf("keyword: %s\n", keyword_to_string(tokens[i].type));
+    token_t token = tokens_arr[i];
+    if (token.type == TOKEN_IDENTIFIER)
+      printf("identifier: %s\n", token.identifier);
+    else if (token.type == TOKEN_CONSTANT)
+      printf("constant: %d\n", token.constant);
+    else if (IS_KEYWORD(token))
+      printf("keyword: %s\n", keyword_to_string(token.type));
     else // symbol
-      printf("symbol: %s\n", symbol_to_string(tokens[i].type));
+      printf("symbol: %s\n", symbol_to_string(token.type));
   }
 
   printf("PARSING\n");

@@ -72,8 +72,7 @@ typedef struct
 }
 token_t;
 
-extern token_t *tokens;
-extern int tokens_size;
+extern VECTOR_T(token_t) *tokens;
 
 void tokenize(void);
 
