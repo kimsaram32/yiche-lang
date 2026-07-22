@@ -49,8 +49,7 @@
   Keywords
 *)
 
-<keyword> ::= "float"
-              | "fn"
+<keyword> ::= "fn"
               | "if"
               | "int"
               | "return"
@@ -116,7 +115,7 @@
 
 <declaration> ::= <variable_declaration> | <function_declaration>
 
-<type_specifier> ::= "int" | "float"
+<type_specifier> ::= "int"
 
 <initializer> ::= "=" <constant>
 

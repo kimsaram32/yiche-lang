@@ -34,9 +34,7 @@ static void skip_multi_line_comment(void)
 
 static int string_to_keyword(char *s)
 {
-  if (!strcmp(s, "float"))
-    return TOKEN_KEYWORD_FLOAT;
-  else if (!strcmp(s, "fn"))
+  if (!strcmp(s, "fn"))
     return TOKEN_KEYWORD_FN;
   else if (!strcmp(s, "if"))
     return TOKEN_KEYWORD_IF;

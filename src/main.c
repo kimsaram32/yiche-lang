@@ -7,8 +7,6 @@ static char *keyword_to_string(token_type_t keyword_type)
 {
   switch (keyword_type)
   {
-    case TOKEN_KEYWORD_FLOAT:
-      return "float";
     case TOKEN_KEYWORD_FN:
       return "fn";
     case TOKEN_KEYWORD_IF:
