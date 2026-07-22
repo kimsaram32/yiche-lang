@@ -12,9 +12,7 @@
 
 <tab> ::= "\t"
 
-<newline> ::= "\n" | "\r"
-
-<whitespace> ::= <space> | <tab> | <newline>
+<whitespace> ::= <space> | <tab> | "\n" | "\r"
 
 <character> ::= <visible_character> | <whitespace>
 
@@ -26,7 +24,7 @@
   Comments
 *)
 
-<single_line_comment> ::= "/" "/" { <character> - <newline> }
+<single_line_comment> ::= "/" "/" { <character> - "\n" }
 
 <multi_line_comment> ::= "/" "*" { <character> } "*" "/"
 
