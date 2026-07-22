@@ -9,5 +9,6 @@
 #include "vector.h"
 #include "character.h"
 #include "input.h"
+#include "ast.h"
 #include "tokenizer.h"
 #include "parser.h"
