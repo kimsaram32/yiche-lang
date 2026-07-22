@@ -84,16 +84,16 @@ static ast_node_t *parse_prefix_expr(void)
 
   while ((token_operator = token_try_advancing(1, TOKEN_SYMBOL_BANG)) != NULL)
   {
-    ast_node_type_t type;
+    unary_operator_t operator;
     switch (token_operator->type)
     {
       case TOKEN_SYMBOL_BANG:
-        type = AST_EXPR_LOGICAL_NEGATION;
+        operator = UNARY_OPERATOR_LOGICAL_NEGATION;
         break;
       default:
         break;
     }
-    *node_p = ast_node_unary_expr_create(type, NULL);
+    *node_p = ast_node_unary_expr_create(operator, NULL);
     node_p = &(DATA_UNARY_EXPR(*node_p))->operand;
   }
 
@@ -101,44 +101,44 @@ static ast_node_t *parse_prefix_expr(void)
   return root;
 }
 
-static ast_node_type_t get_binary_operator_type(token_type_t symbol_type)
+static binary_operator_t get_binary_operator(token_type_t symbol_type)
 {
   switch (symbol_type)
   {
     case TOKEN_SYMBOL_ASTERISK:
-      return AST_EXPR_MULTIPLICATION;
+      return BINARY_OPERATOR_MULTIPLICATION;
     case TOKEN_SYMBOL_SLASH:
-      return AST_EXPR_DIVISION;
+      return BINARY_OPERATOR_DIVISION;
     case TOKEN_SYMBOL_PERCENT:
-      return AST_EXPR_MODULO;
+      return BINARY_OPERATOR_MODULO;
 
     case TOKEN_SYMBOL_PLUS:
-      return AST_EXPR_ADDITION;
+      return BINARY_OPERATOR_ADDITION;
     case TOKEN_SYMBOL_MINUS:
-      return AST_EXPR_SUBTRACTION;
+      return BINARY_OPERATOR_SUBTRACTION;
 
     case TOKEN_SYMBOL_LT:
-      return AST_EXPR_LESS_THAN;
+      return BINARY_OPERATOR_LESS_THAN;
     case TOKEN_SYMBOL_GT:
-      return AST_EXPR_GREATER_THAN;
+      return BINARY_OPERATOR_GREATER_THAN;
     case TOKEN_SYMBOL_LE:
-      return AST_EXPR_LESS_THAN_EQUAL_TO;
+      return BINARY_OPERATOR_LESS_THAN_EQUAL_TO;
     case TOKEN_SYMBOL_GE:
-      return AST_EXPR_GREATER_THAN_EQUAL_TO;
+      return BINARY_OPERATOR_GREATER_THAN_EQUAL_TO;
 
     case TOKEN_SYMBOL_EQEQ:
-      return AST_EXPR_EQUALS;
+      return BINARY_OPERATOR_EQUALS;
     case TOKEN_SYMBOL_BANGEQ:
-      return AST_EXPR_NOT_EQUALS;
+      return BINARY_OPERATOR_NOT_EQUALS;
 
     case TOKEN_SYMBOL_ANDAND:
-      return AST_EXPR_LOGICAL_AND;
+      return BINARY_OPERATOR_LOGICAL_AND;
 
     case TOKEN_SYMBOL_OROR:
-      return AST_EXPR_LOGICAL_OR;
+      return BINARY_OPERATOR_LOGICAL_OR;
 
     case TOKEN_SYMBOL_EQ:
-      return AST_EXPR_ASSIGNMENT;
+      return BINARY_OPERATOR_ASSIGNMENT;
 
     default:
       exit_with_error("get_binary_operator_type: missing binary operator mapping for symbol %d", symbol_type);
@@ -156,8 +156,8 @@ static ast_node_t *func(void) \
   while ((token_operator = token_try_advancing(types_n, __VA_ARGS__)) != NULL) \
   { \
     ast_node_t *right_operand = prev(); \
-    ast_node_type_t type = get_binary_operator_type(token_operator->type); \
-    root = ast_node_binary_expr_create(type, root, right_operand); \
+    binary_operator_t operator = get_binary_operator(token_operator->type); \
+    root = ast_node_binary_expr_create(operator, root, right_operand); \
   } \
   return root; \
 }
@@ -198,7 +198,7 @@ static ast_node_t *parse_assignment_expr(void)
     }
 
     ast_node_t *identifier_node = ast_node_primitive_expr_create(token_identifier);
-    *node_p = ast_node_binary_expr_create(AST_EXPR_ASSIGNMENT, identifier_node, NULL);
+    *node_p = ast_node_binary_expr_create(BINARY_OPERATOR_ASSIGNMENT, identifier_node, NULL);
     node_p = &(DATA_BINARY_EXPR(*node_p)->right_operand);
   }
 
@@ -253,7 +253,7 @@ static ast_node_t *parse_expr_stmt(void)
 {
   ast_node_t *node_expr = parse_expr();
   token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
-  return ast_node_stmt_create(AST_STMT_EXPR, NULL, node_expr);
+  return ast_node_stmt_create(STMT_TYPE_EXPR, NULL, node_expr);
 }
 
 static ast_node_t *parse_if_stmt(void)
@@ -275,7 +275,7 @@ static ast_node_t *parse_if_stmt(void)
   else
     node_stmt_list = ast_node_stmt_list_create();
 
-  return ast_node_stmt_create(AST_STMT_IF, node_stmt_list, node_expr);
+  return ast_node_stmt_create(STMT_TYPE_IF, node_stmt_list, node_expr);
 }
 
 static ast_node_t *parse_while_stmt(void)
@@ -297,7 +297,7 @@ static ast_node_t *parse_while_stmt(void)
   else
     node_stmt_list = ast_node_stmt_list_create();
 
-  return ast_node_stmt_create(AST_STMT_WHILE, node_stmt_list, node_expr);
+  return ast_node_stmt_create(STMT_TYPE_WHILE, node_stmt_list, node_expr);
 }
 
 static ast_node_t *parse_return_stmt(void)
@@ -306,7 +306,7 @@ static ast_node_t *parse_return_stmt(void)
   ast_node_t *node_expr = parse_expr();
   token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
 
-  return ast_node_stmt_create(AST_STMT_RETURN, NULL, node_expr);
+  return ast_node_stmt_create(STMT_TYPE_RETURN, NULL, node_expr);
 }
 
 /*

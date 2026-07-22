@@ -76,7 +76,7 @@ static ast_node_t *ast_node_create(ast_node_type_t type)
 #define AST_NODE_CREATE_WITH_DATA(node, data, type, data_type) do { \
     node = ast_node_create(type); \
     data = malloc(sizeof(data_type)); \
-    if (data == NULL) {\
+    if (data == NULL) { \
       exit_out_of_memory(); \
     } \
     node->data = data; \
@@ -91,7 +91,7 @@ ast_node_t *ast_node_primitive_expr_create(token_t *token)
 {
   ast_node_t *node;
   ast_node_primitive_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_EXPR_PRIMITIVE, ast_node_primitive_expr_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_PRIMITIVE_EXPR, ast_node_primitive_expr_t);
 
   data->token = token;
 
@@ -118,29 +118,30 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
  * unary_expr
  */
 
-ast_node_t *ast_node_unary_expr_create(ast_node_type_t type, ast_node_t *operand)
+ast_node_t *ast_node_unary_expr_create(unary_operator_t operator, ast_node_t *operand)
 {
   ast_node_t *node;
   ast_node_unary_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_unary_expr_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_UNARY_EXPR, ast_node_unary_expr_t);
 
+  data->operator = operator;
   data->operand = operand;
 
   return node;
 }
 
+char *unary_operator_to_string(unary_operator_t operator)
+{
+  switch (operator)
+  {
+    case UNARY_OPERATOR_LOGICAL_NEGATION:
+      return "!";
+  }
+}
+
 AST_NODE_DEFINE_PRINT_FUNCTION(unary_expr)
 {
-  char *operator;
-  switch (node->type)
-  {
-    case AST_EXPR_LOGICAL_NEGATION:
-      operator = "!";
-      break;
-    default:
-      __builtin_unreachable();
-  }
-  AST_NODE_PRINT_ATTR("operator", "%s", operator);
+  AST_NODE_PRINT_ATTR("operator", "%s", unary_operator_to_string(data->operator));
   AST_NODE_PRINT_CHILD("operand", data->operand);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
@@ -149,70 +150,58 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
  * binary_expr
  */
 
-ast_node_t *ast_node_binary_expr_create(ast_node_type_t type, ast_node_t *left_operand,
-                                               ast_node_t *right_operand)
+ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *left_operand,
+                                        ast_node_t *right_operand)
 {
   ast_node_t *node;
   ast_node_binary_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_binary_expr_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_BINARY_EXPR, ast_node_binary_expr_t);
 
+  data->operator = operator;
   data->left_operand = left_operand;
   data->right_operand = right_operand;
 
   return node;
 }
 
+char *binary_operator_to_string(binary_operator_t operator)
+{
+  switch (operator)
+  {
+    case BINARY_OPERATOR_ADDITION:
+      return "+";
+    case BINARY_OPERATOR_SUBTRACTION:
+      return "-";
+    case BINARY_OPERATOR_MULTIPLICATION:
+      return "*";
+    case BINARY_OPERATOR_DIVISION:
+      return "/";
+    case BINARY_OPERATOR_MODULO:
+      return "%";
+    case BINARY_OPERATOR_LESS_THAN:
+      return "<";
+    case BINARY_OPERATOR_GREATER_THAN:
+      return ">";
+    case BINARY_OPERATOR_LESS_THAN_EQUAL_TO:
+      return "<=";
+    case BINARY_OPERATOR_GREATER_THAN_EQUAL_TO:
+      return ">=";
+    case BINARY_OPERATOR_EQUALS:
+      return "==";
+    case BINARY_OPERATOR_NOT_EQUALS:
+      return "!=";
+    case BINARY_OPERATOR_LOGICAL_AND:
+      return "&&";
+    case BINARY_OPERATOR_LOGICAL_OR:
+      return "||";
+    case BINARY_OPERATOR_ASSIGNMENT:
+      return "=";
+  }
+}
+
 AST_NODE_DEFINE_PRINT_FUNCTION(binary_expr)
 {
-  char *operator;
-  switch (node->type)
-  {
-    case AST_EXPR_ADDITION:
-      operator = "+";
-      break;
-    case AST_EXPR_SUBTRACTION:
-      operator = "-";
-      break;
-    case AST_EXPR_MULTIPLICATION:
-      operator = "*";
-      break;
-    case AST_EXPR_DIVISION:
-      operator = "/";
-      break;
-    case AST_EXPR_MODULO:
-      operator = "%";
-      break;
-    case AST_EXPR_LESS_THAN:
-      operator = "<";
-      break;
-    case AST_EXPR_GREATER_THAN:
-      operator = ">";
-      break;
-    case AST_EXPR_LESS_THAN_EQUAL_TO:
-      operator = "<=";
-      break;
-    case AST_EXPR_GREATER_THAN_EQUAL_TO:
-      operator = ">=";
-      break;
-    case AST_EXPR_EQUALS:
-      operator = "==";
-      break;
-    case AST_EXPR_NOT_EQUALS:
-      operator = "!=";
-      break;
-    case AST_EXPR_LOGICAL_AND:
-      operator = "&&";
-      break;
-    case AST_EXPR_LOGICAL_OR:
-      operator = "||";
-      break;
-    case AST_EXPR_ASSIGNMENT:
-      operator = "=";
-      break;
-    default:
-      __builtin_unreachable();
-  }
-  AST_NODE_PRINT_ATTR("operator", "%s", operator);
+  AST_NODE_PRINT_ATTR("operator", "%s", binary_operator_to_string(data->operator));
   AST_NODE_PRINT_CHILD("left", data->left_operand);
   AST_NODE_PRINT_CHILD("right", data->right_operand);
 }
@@ -226,7 +215,7 @@ ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
 {
   ast_node_t *node;
   ast_node_function_call_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_EXPR_FUNCTION_CALL, ast_node_function_call_expr_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_FUNCTION_CALL_EXPR, ast_node_function_call_expr_t);
 
   data->callee = callee;
   data->arguments = vector_pointer_create(8);
@@ -257,7 +246,7 @@ ast_node_t *ast_node_stmt_list_create(void)
 {
   ast_node_t *node;
   ast_node_stmt_list_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_STMT_LIST, ast_node_stmt_list_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_STMT_LIST, ast_node_stmt_list_t);
 
   data->stmts = vector_pointer_create(8);
   if (data->stmts == NULL)
@@ -282,43 +271,41 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
  * stmt
  */
 
-ast_node_t *ast_node_stmt_create(ast_node_type_t type, ast_node_t *stmt_list,
-                                        ast_node_t *expr_0)
+ast_node_t *ast_node_stmt_create(stmt_type_t type, ast_node_t *stmt_list,
+                                 ast_node_t *expr_0)
 {
   ast_node_t *node;
   ast_node_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, type, ast_node_stmt_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_STMT, ast_node_stmt_t);
 
+  data->type = type;
   data->stmt_list = stmt_list;
   data->expr_0 = expr_0;
 
   return node;
 }
 
+char *stmt_type_to_string(stmt_type_t type)
+{
+  switch (type)
+  {
+    case STMT_TYPE_EXPR:
+      return "expr";
+    case STMT_TYPE_IF:
+      return "if";
+    case STMT_TYPE_WHILE:
+      return "while";
+    case STMT_TYPE_RETURN:
+      return "return";
+  }
+}
+
 AST_NODE_DEFINE_PRINT_FUNCTION(stmt)
 {
-  char *type;
-  switch (node->type)
-  {
-    case AST_STMT_EXPR:
-      type = "expr";
-      break;
-    case AST_STMT_IF:
-      type = "if";
-      break;
-    case AST_STMT_WHILE:
-      type = "while";
-      break;
-    case AST_STMT_RETURN:
-      type = "return";
-      break;
-    default:
-      __builtin_unreachable();
-  }
-  AST_NODE_PRINT_ATTR("type", "%s", type);
+  AST_NODE_PRINT_ATTR("type", "%s", stmt_type_to_string(data->type));
   AST_NODE_PRINT_CHILD("expr", data->expr_0);
 
-  if (node->type == AST_STMT_IF || node->type == AST_STMT_WHILE)
+  if (data->type == STMT_TYPE_IF || data->type == STMT_TYPE_WHILE)
     AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
@@ -328,11 +315,11 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
  */
 
 ast_node_t *ast_node_variable_decl_create(token_t *token_identifier,
-                                                 data_type_t data_type, ast_node_t *initializer)
+                                          data_type_t data_type, ast_node_t *initializer)
 {
   ast_node_t *node;
   ast_node_variable_decl_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_DECL_VARIABLE, ast_node_variable_decl_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_VARIABLE_DECL, ast_node_variable_decl_t);
 
   data->token_identifier = token_identifier;
   data->data_type = data_type;
@@ -359,7 +346,7 @@ ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
 {
   ast_node_t *node;
   ast_node_function_decl_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_DECL_FUNCTION, ast_node_function_decl_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_FUNCTION_DECL, ast_node_function_decl_t);
 
   data->token_identifier = token_identifier;
   data->parameters = vector_pointer_create(8);
@@ -392,7 +379,7 @@ ast_node_t *ast_node_program_create(void)
 {
   ast_node_t *node;
   ast_node_program_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_PROGRAM, ast_node_program_t);
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_PROGRAM, ast_node_program_t);
 
   data->decls = vector_pointer_create(8);
   if (data->decls == NULL)
@@ -421,65 +408,32 @@ void _ast_node_print(ast_node_t *node, int level)
 {
   switch (node->type)
   {
-    // ast_node_program_t
-    case AST_PROGRAM:
-      ast_node_program_print(node, level);
-      break;
-
-    // ast_node_variable_decl_t
-    case AST_DECL_VARIABLE:
-      ast_node_variable_decl_print(node, level);
-      break;
-
-    // ast_node_function_decl_t
-    case AST_DECL_FUNCTION:
-      ast_node_function_decl_print(node, level);
-      break;
-
-    // ast_node_stmt_t
-    case AST_STMT_EXPR:
-    case AST_STMT_IF:
-    case AST_STMT_WHILE:
-    case AST_STMT_RETURN:
-      ast_node_stmt_print(node, level);
-      break;
-
-    // ast_node_stmt_list_t
-    case AST_STMT_LIST:
-      ast_node_stmt_list_print(node, level);
-      break;
-
-    // ast_node_primitive_expr_t
-    case AST_EXPR_PRIMITIVE:
+    case AST_NODE_PRIMITIVE_EXPR:
       ast_node_primitive_expr_print(node, level);
       break;
-
-    // ast_node_function_call_expr_t
-    case AST_EXPR_FUNCTION_CALL:
-      ast_node_function_call_expr_print(node, level);
-      break;
-
-    // ast_node_unary_expr_t
-    case AST_EXPR_LOGICAL_NEGATION:
+    case AST_NODE_UNARY_EXPR:
       ast_node_unary_expr_print(node, level);
       break;
-
-    // ast_node_binary_expr_t
-    case AST_EXPR_ADDITION:
-    case AST_EXPR_SUBTRACTION:
-    case AST_EXPR_MULTIPLICATION:
-    case AST_EXPR_DIVISION:
-    case AST_EXPR_MODULO:
-    case AST_EXPR_LESS_THAN:
-    case AST_EXPR_GREATER_THAN:
-    case AST_EXPR_LESS_THAN_EQUAL_TO:
-    case AST_EXPR_GREATER_THAN_EQUAL_TO:
-    case AST_EXPR_EQUALS:
-    case AST_EXPR_NOT_EQUALS:
-    case AST_EXPR_LOGICAL_AND:
-    case AST_EXPR_LOGICAL_OR:
-    case AST_EXPR_ASSIGNMENT:
+    case AST_NODE_BINARY_EXPR:
       ast_node_binary_expr_print(node, level);
+      break;
+    case AST_NODE_FUNCTION_CALL_EXPR:
+      ast_node_function_call_expr_print(node, level);
+      break;
+    case AST_NODE_STMT_LIST:
+      ast_node_stmt_list_print(node, level);
+      break;
+    case AST_NODE_STMT:
+      ast_node_stmt_print(node, level);
+      break;
+    case AST_NODE_VARIABLE_DECL:
+      ast_node_variable_decl_print(node, level);
+      break;
+    case AST_NODE_FUNCTION_DECL:
+      ast_node_function_decl_print(node, level);
+      break;
+    case AST_NODE_PROGRAM:
+      ast_node_program_print(node, level);
       break;
   }
 }

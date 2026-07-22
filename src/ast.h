@@ -4,81 +4,24 @@
 #include "tokenizer.h"
 
 /*
- * Adding a new node data type:
+ * Adding a new node type:
  * - Add definitions in ast.c and ast.h
  * - Update 'ast_node_print' in ast.c
  */
 
-/*
- * Adding a new node type:
- * - ast.h: Add a new member to the 'ast_node_type_t' enum
- * - Update the corresponding node data type
- * - parser.c: Add/update the corresponding parser function
- */
-
-/*
- * Node types & node definition
- */
-
 typedef enum {
-  // ast_node_program_t
-  AST_PROGRAM,
+  AST_NODE_PRIMITIVE_EXPR,
+  AST_NODE_UNARY_EXPR,
+  AST_NODE_BINARY_EXPR,
+  AST_NODE_FUNCTION_CALL_EXPR,
 
-  /*
-   * Declarations
-   */
+  AST_NODE_STMT_LIST,
+  AST_NODE_STMT,
 
-  // ast_node_variable_decl_t
-  AST_DECL_VARIABLE,
+  AST_NODE_VARIABLE_DECL,
+  AST_NODE_FUNCTION_DECL,
 
-  // ast_node_function_decl_t
-  AST_DECL_FUNCTION,
-
-  /*
-   * Statements
-   */
-
-  // ast_node_stmt_t
-  AST_STMT_EXPR, // only expr_0 is used
-  AST_STMT_IF,
-  AST_STMT_WHILE,
-  AST_STMT_RETURN,
-
-  // ast_node_stmt_list_t
-  AST_STMT_LIST,
-
-  /*
-   * Expressions
-   */
-
-  // ast_node_primitive_expr_t
-  AST_EXPR_PRIMITIVE,
-
-  // ast_node_function_call_expr_t
-  AST_EXPR_FUNCTION_CALL,
-
-  // ast_node_unary_expr_t
-  AST_EXPR_LOGICAL_NEGATION,
-
-  // ast_node_binary_expr_t
-  AST_EXPR_ADDITION,
-  AST_EXPR_SUBTRACTION,
-  AST_EXPR_MULTIPLICATION,
-  AST_EXPR_DIVISION,
-  AST_EXPR_MODULO,
-
-  AST_EXPR_LESS_THAN,
-  AST_EXPR_GREATER_THAN,
-  AST_EXPR_LESS_THAN_EQUAL_TO,
-  AST_EXPR_GREATER_THAN_EQUAL_TO,
-
-  AST_EXPR_EQUALS,
-  AST_EXPR_NOT_EQUALS,
-
-  AST_EXPR_LOGICAL_AND,
-  AST_EXPR_LOGICAL_OR,
-
-  AST_EXPR_ASSIGNMENT,
+  AST_NODE_PROGRAM,
 } ast_node_type_t;
 
 typedef enum
@@ -87,19 +30,12 @@ typedef enum
 }
 data_type_t;
 
-// TODO: The relationship between these two members needs to be improved.
-// Currently, it's too easy to make an invalid combination.
-
 typedef struct
 {
   ast_node_type_t type;
   void *data;
 }
 ast_node_t;
-
-/*
- * Node data types
- */
 
 /*
  * primitive_expr
@@ -121,13 +57,22 @@ ast_node_t *ast_node_primitive_expr_create(token_t *token);
 
 #define DATA_UNARY_EXPR(node) ((ast_node_unary_expr_t*)((node)->data))
 
+typedef enum
+{
+  UNARY_OPERATOR_LOGICAL_NEGATION,
+}
+unary_operator_t;
+
+char *unary_operator_to_string(unary_operator_t operator);
+
 typedef struct
 {
+  unary_operator_t operator;
   ast_node_t *operand; // expression
 }
 ast_node_unary_expr_t;
 
-ast_node_t *ast_node_unary_expr_create(ast_node_type_t type, ast_node_t *operand);
+ast_node_t *ast_node_unary_expr_create(unary_operator_t operator, ast_node_t *operand);
 
 /*
  * binary_expr
@@ -135,13 +80,39 @@ ast_node_t *ast_node_unary_expr_create(ast_node_type_t type, ast_node_t *operand
 
 #define DATA_BINARY_EXPR(node) ((ast_node_binary_expr_t*)((node)->data))
 
+typedef enum
+{
+  BINARY_OPERATOR_ADDITION,
+  BINARY_OPERATOR_SUBTRACTION,
+  BINARY_OPERATOR_MULTIPLICATION,
+  BINARY_OPERATOR_DIVISION,
+  BINARY_OPERATOR_MODULO,
+
+  BINARY_OPERATOR_LESS_THAN,
+  BINARY_OPERATOR_GREATER_THAN,
+  BINARY_OPERATOR_LESS_THAN_EQUAL_TO,
+  BINARY_OPERATOR_GREATER_THAN_EQUAL_TO,
+
+  BINARY_OPERATOR_EQUALS,
+  BINARY_OPERATOR_NOT_EQUALS,
+
+  BINARY_OPERATOR_LOGICAL_AND,
+  BINARY_OPERATOR_LOGICAL_OR,
+
+  BINARY_OPERATOR_ASSIGNMENT,
+}
+binary_operator_t;
+
+char *binary_operator_to_string(binary_operator_t operator);
+
 typedef struct
 {
+  binary_operator_t operator;
   ast_node_t *left_operand, *right_operand; // expression
 }
 ast_node_binary_expr_t;
 
-ast_node_t *ast_node_binary_expr_create(ast_node_type_t type, ast_node_t *left_operand,
+ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *left_operand,
                                         ast_node_t *right_operand);
 
 /*
@@ -181,14 +152,26 @@ void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt);
 
 #define DATA_STMT(node) ((ast_node_stmt_t*)((node)->data))
 
+typedef enum
+{
+  STMT_TYPE_EXPR,
+  STMT_TYPE_IF,
+  STMT_TYPE_WHILE,
+  STMT_TYPE_RETURN,
+}
+stmt_type_t;
+
+char *stmt_type_to_string(stmt_type_t operator);
+
 typedef struct
 {
+  stmt_type_t type;
   ast_node_t *stmt_list; // ast_node_stmt_list_t
   ast_node_t *expr_0; // expression
 }
 ast_node_stmt_t;
 
-ast_node_t *ast_node_stmt_create(ast_node_type_t type, ast_node_t *stmt_list,
+ast_node_t *ast_node_stmt_create(stmt_type_t type, ast_node_t *stmt_list,
                                  ast_node_t *expr_0);
 
 /*
