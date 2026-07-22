@@ -1,5 +1,5 @@
-#ifndef _TOKENIZER_H
-#define _TOKENIZER_H
+#ifndef YICHE_TOKENIZER_H
+#define YICHE_TOKENIZER_H
 
 #include <stdio.h>
 #include "input.h"

@@ -1,5 +1,5 @@
-#ifndef _INPUT_H
-#define _INPUT_H
+#ifndef YICHE_INPUT_H
+#define YICHE_INPUT_H
 
 typedef struct
 {

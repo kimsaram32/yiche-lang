@@ -1,5 +1,5 @@
-#ifndef _VECTOR_H
-#define _VECTOR_H
+#ifndef YICHE_VECTOR_H
+#define YICHE_VECTOR_H
 
 typedef struct
 {

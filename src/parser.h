@@ -1,5 +1,5 @@
-#ifndef _PARSER_H
-#define _PARSER_H
+#ifndef YICHE_PARSER_H
+#define YICHE_PARSER_H
 
 #include "tokenizer.h"
 

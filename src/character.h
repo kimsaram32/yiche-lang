@@ -1,5 +1,5 @@
-#ifndef _CHARACTER_H
-#define _CHARACTER_H
+#ifndef YICHE_CHARACTER_H
+#define YICHE_CHARACTER_H
 
 int is_visible_character(char c);
 int is_whitespace(char c);

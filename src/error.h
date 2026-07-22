@@ -1,5 +1,5 @@
-#ifndef _ERROR_H
-#define _ERROR_H
+#ifndef YICHE_ERROR_H
+#define YICHE_ERROR_H
 
 #include <stdlib.h>
 

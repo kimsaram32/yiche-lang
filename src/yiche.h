@@ -1,5 +1,5 @@
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef YICHE_COMMON_H
+#define YICHE_COMMON_H
 
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 
