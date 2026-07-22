@@ -16,6 +16,8 @@ vector_t;
 
 vector_t *vector_create(size_t element_size, int capacity);
 
+void vector_free(vector_t *vector);
+
 #define VECTOR_ARR(vector, type) ((type*)(vector)->arr)
 
 void *vector_next_element(vector_t *vector);

@@ -21,16 +21,23 @@ vector_t *vector_create(size_t element_size, int capacity)
   return vector;
 }
 
+void vector_free(vector_t *vector)
+{
+  free(vector->arr);
+  free(vector);
+}
+
 void *vector_next_element(vector_t *vector)
 {
   if (vector->length == vector->capacity)
   {
-    vector->capacity = vector->capacity * 2;
+    int new_capacity = vector->capacity * 2;
 
-    void *new = realloc(vector->arr, vector->element_size * vector->capacity);
+    void *new = realloc(vector->arr, vector->element_size * new_capacity);
     if (new == NULL)
       return NULL;
 
+    vector->capacity = new_capacity;
     vector->arr = new;
   }
 

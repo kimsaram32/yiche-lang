@@ -12,7 +12,8 @@ static input_char_t file_next_char(void);
 
 void input_init(void)
 {
-  input_buffer = vector_create(sizeof(input_char_t), 128);
+  if ((input_buffer = vector_create(sizeof(input_char_t), 128)) == NULL)
+    exit_out_of_memory();
 }
 
 input_char_t input_get_last_char(void)

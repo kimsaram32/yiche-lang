@@ -267,7 +267,8 @@ static int read_character_constant(void)
 
 void tokenize(void)
 {
-  tokens = vector_create(sizeof(token_t), 64);
+  if ((tokens = vector_create(sizeof(token_t), 64)) == NULL)
+    exit_out_of_memory();
 
   int c, c2;
   while ((c = input_advance_char()) != 0)
