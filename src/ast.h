@@ -5,14 +5,14 @@
 
 /*
  * Adding a new node data type:
- * - Define the struct, convenience macro, creator, and optional
- *   manipulation functions
- * - Add a new section to the 'ast_node_type_t' enum
+ * - Add definitions in ast.c and ast.h
+ * - Update 'ast_node_print' in ast.c
  */
 
 /*
  * Adding a new node type:
  * - ast.h: Add a new member to the 'ast_node_type_t' enum
+ * - Update the corresponding node data type
  * - parser.c: Add/update the corresponding parser function
  */
 
@@ -31,7 +31,7 @@ typedef enum {
   // ast_node_variable_decl_t
   AST_DECL_VARIABLE,
 
-  // ast_node_decl_t
+  // ast_node_function_decl_t
   AST_DECL_FUNCTION,
 
   /*
@@ -241,5 +241,11 @@ ast_node_program_t;
 
 ast_node_t *ast_node_program_create(void);
 void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl);
+
+/*
+ * Printing
+ */
+
+void ast_node_print(ast_node_t *node);
 
 #endif
