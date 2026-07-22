@@ -3,6 +3,12 @@
 
 vector_t *vector_create(size_t element_size, int capacity)
 {
+  if (element_size == 0)
+    exit_with_error("vector_create(): 'element_size' must be a positive integer");
+
+  if (capacity <= 0)
+    exit_with_error("vector_create(): 'capacity' must be a positive integer");
+
   vector_t *vector = malloc(sizeof(vector_t));
   if (vector == NULL)
     return NULL;
@@ -44,7 +50,7 @@ void *vector_next_element(vector_t *vector)
   return ((unsigned char*)vector->arr) + vector->element_size * vector->length++;
 }
 
-vector_t *vector_pointer_create(int capacity)
+VECTOR_T(void*) *vector_pointer_create(int capacity)
 {
   return vector_create(sizeof(void*), capacity);
 }
