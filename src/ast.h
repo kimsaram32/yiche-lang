@@ -1,5 +1,5 @@
-#ifndef _YICHE_AST_H
-#define _YICHE_AST_H
+#ifndef YICHE_AST_H
+#define YICHE_AST_H
 
 #include "tokenizer.h"
 
