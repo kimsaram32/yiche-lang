@@ -268,45 +268,90 @@ AST_NODE_DEFINE_PRINT_FUNCTION(stmt_list)
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 /*
- * stmt
+ * expr_stmt
  */
 
-ast_node_t *ast_node_stmt_create(stmt_type_t type, ast_node_t *stmt_list,
-                                 ast_node_t *expr_0)
+ast_node_t *ast_node_expr_stmt_create(ast_node_t *expr)
 {
   ast_node_t *node;
-  ast_node_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_STMT, ast_node_stmt_t);
+  ast_node_expr_stmt_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_EXPR_STMT, ast_node_expr_stmt_t);
 
-  data->type = type;
-  data->stmt_list = stmt_list;
-  data->expr_0 = expr_0;
+  data->expr = expr;
 
   return node;
 }
 
-char *stmt_type_to_string(stmt_type_t type)
+AST_NODE_DEFINE_PRINT_FUNCTION(expr_stmt)
 {
-  switch (type)
-  {
-    case STMT_TYPE_EXPR:
-      return "expr";
-    case STMT_TYPE_IF:
-      return "if";
-    case STMT_TYPE_WHILE:
-      return "while";
-    case STMT_TYPE_RETURN:
-      return "return";
-  }
+  AST_NODE_PRINT_CHILD("expr", data->expr);
+}
+AST_NODE_DEFINE_PRINT_FUNCTION_END
+
+/*
+ * if_stmt
+ */
+
+ast_node_t *ast_node_if_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
+{
+  ast_node_t *node;
+  ast_node_if_stmt_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_IF_STMT, ast_node_if_stmt_t);
+
+  data->cond_expr = cond_expr;
+  data->stmt_list = stmt_list;
+
+  return node;
 }
 
-AST_NODE_DEFINE_PRINT_FUNCTION(stmt)
+AST_NODE_DEFINE_PRINT_FUNCTION(if_stmt)
 {
-  AST_NODE_PRINT_ATTR("type", "%s", stmt_type_to_string(data->type));
-  AST_NODE_PRINT_CHILD("expr", data->expr_0);
+  AST_NODE_PRINT_CHILD("expr", data->cond_expr);
+  AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
+}
+AST_NODE_DEFINE_PRINT_FUNCTION_END
 
-  if (data->type == STMT_TYPE_IF || data->type == STMT_TYPE_WHILE)
-    AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
+/*
+ * while_stmt
+ */
+
+ast_node_t *ast_node_while_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
+{
+  ast_node_t *node;
+  ast_node_while_stmt_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_WHILE_STMT, ast_node_while_stmt_t);
+
+  data->cond_expr = cond_expr;
+  data->stmt_list = stmt_list;
+
+  return node;
+}
+
+AST_NODE_DEFINE_PRINT_FUNCTION(while_stmt)
+{
+  AST_NODE_PRINT_CHILD("expr", data->cond_expr);
+  AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
+}
+AST_NODE_DEFINE_PRINT_FUNCTION_END
+
+/*
+ * return_stmt
+ */
+
+ast_node_t *ast_node_return_stmt_create(ast_node_t *expr)
+{
+  ast_node_t *node;
+  ast_node_return_stmt_t *data;
+  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_RETURN_STMT, ast_node_return_stmt_t);
+
+  data->expr = expr;
+
+  return node;
+}
+
+AST_NODE_DEFINE_PRINT_FUNCTION(return_stmt)
+{
+  AST_NODE_PRINT_CHILD("expr", data->expr);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -423,8 +468,17 @@ void _ast_node_print(ast_node_t *node, int level)
     case AST_NODE_STMT_LIST:
       ast_node_stmt_list_print(node, level);
       break;
-    case AST_NODE_STMT:
-      ast_node_stmt_print(node, level);
+    case AST_NODE_EXPR_STMT:
+      ast_node_expr_stmt_print(node, level);
+      break;
+    case AST_NODE_IF_STMT:
+      ast_node_if_stmt_print(node, level);
+      break;
+    case AST_NODE_WHILE_STMT:
+      ast_node_while_stmt_print(node, level);
+      break;
+    case AST_NODE_RETURN_STMT:
+      ast_node_return_stmt_print(node, level);
       break;
     case AST_NODE_VARIABLE_DECL:
       ast_node_variable_decl_print(node, level);

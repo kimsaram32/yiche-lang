@@ -16,7 +16,10 @@ typedef enum {
   AST_NODE_FUNCTION_CALL_EXPR,
 
   AST_NODE_STMT_LIST,
-  AST_NODE_STMT,
+  AST_NODE_EXPR_STMT,
+  AST_NODE_IF_STMT,
+  AST_NODE_WHILE_STMT,
+  AST_NODE_RETURN_STMT,
 
   AST_NODE_VARIABLE_DECL,
   AST_NODE_FUNCTION_DECL,
@@ -147,32 +150,62 @@ ast_node_t *ast_node_stmt_list_create(void);
 void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt);
 
 /*
- * stmt
+ * expr_stmt
  */
 
-#define DATA_STMT(node) ((ast_node_stmt_t*)((node)->data))
-
-typedef enum
-{
-  STMT_TYPE_EXPR,
-  STMT_TYPE_IF,
-  STMT_TYPE_WHILE,
-  STMT_TYPE_RETURN,
-}
-stmt_type_t;
-
-char *stmt_type_to_string(stmt_type_t operator);
+#define DATA_EXPR_STMT(node) ((ast_node_expr_stmt_t*)((node)->data))
 
 typedef struct
 {
-  stmt_type_t type;
-  ast_node_t *stmt_list; // ast_node_stmt_list_t
-  ast_node_t *expr_0; // expression
+  ast_node_t *expr; // expression
 }
-ast_node_stmt_t;
+ast_node_expr_stmt_t;
 
-ast_node_t *ast_node_stmt_create(stmt_type_t type, ast_node_t *stmt_list,
-                                 ast_node_t *expr_0);
+ast_node_t *ast_node_expr_stmt_create(ast_node_t *expr);
+
+/*
+ * if_stmt
+ */
+
+#define DATA_IF_STMT(node) ((ast_node_if_stmt_t*)((node)->data))
+
+typedef struct
+{
+  ast_node_t *cond_expr; // expression
+  ast_node_t *stmt_list;
+}
+ast_node_if_stmt_t;
+
+ast_node_t *ast_node_if_stmt_create(ast_node_t *expr, ast_node_t *stmt_list);
+
+/*
+ * while_stmt
+ */
+
+#define DATA_WHILE_STMT(node) ((ast_node_while_stmt_t*)((node)->data))
+
+typedef struct
+{
+  ast_node_t *cond_expr; // expression
+  ast_node_t *stmt_list;
+}
+ast_node_while_stmt_t;
+
+ast_node_t *ast_node_while_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list);
+
+/*
+ * return_stmt
+ */
+
+#define DATA_RETURN_STMT(node) ((ast_node_return_stmt_t*)((node)->data))
+
+typedef struct
+{
+  ast_node_t *expr; // expression
+}
+ast_node_return_stmt_t;
+
+ast_node_t *ast_node_return_stmt_create(ast_node_t *expr);
 
 /*
  * variable_decl

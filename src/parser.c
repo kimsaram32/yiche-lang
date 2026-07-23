@@ -253,7 +253,7 @@ static ast_node_t *parse_expr_stmt(void)
 {
   ast_node_t *node_expr = parse_expr();
   token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
-  return ast_node_stmt_create(STMT_TYPE_EXPR, NULL, node_expr);
+  return ast_node_expr_stmt_create(node_expr);
 }
 
 static ast_node_t *parse_if_stmt(void)
@@ -275,7 +275,7 @@ static ast_node_t *parse_if_stmt(void)
   else
     node_stmt_list = ast_node_stmt_list_create();
 
-  return ast_node_stmt_create(STMT_TYPE_IF, node_stmt_list, node_expr);
+  return ast_node_if_stmt_create(node_expr, node_stmt_list);
 }
 
 static ast_node_t *parse_while_stmt(void)
@@ -297,7 +297,7 @@ static ast_node_t *parse_while_stmt(void)
   else
     node_stmt_list = ast_node_stmt_list_create();
 
-  return ast_node_stmt_create(STMT_TYPE_WHILE, node_stmt_list, node_expr);
+  return ast_node_while_stmt_create(node_expr, node_stmt_list);
 }
 
 static ast_node_t *parse_return_stmt(void)
@@ -306,7 +306,7 @@ static ast_node_t *parse_return_stmt(void)
   ast_node_t *node_expr = parse_expr();
   token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
 
-  return ast_node_stmt_create(STMT_TYPE_RETURN, NULL, node_expr);
+  return ast_node_return_stmt_create(node_expr);
 }
 
 /*
