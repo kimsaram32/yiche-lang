@@ -113,12 +113,12 @@ ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *
 
 typedef struct
 {
-  ast_node_t *callee; // expression
+  token_t *token_callee; // identifier
   VECTOR_T(ast_node_t*) *arguments; // expression
 }
 ast_node_function_call_expr_t;
 
-ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee);
+ast_node_t *ast_node_function_call_expr_create(token_t *token_callee);
 void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg);
 
 /*

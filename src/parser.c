@@ -54,27 +54,56 @@ static ast_node_t *parse_primitive_expr(void)
   return node;
 }
 
-// <function_call_expression> ::= <primitive_expression> { "(" [ <function_call_argument_list> ] ")" }
-
 static ast_node_t *parse_function_call_expr(void)
 {
-  ast_node_t *root = parse_primitive_expr();
+  token_t *token_callee = token_try_advancing(1, TOKEN_IDENTIFIER);
+  if (token_callee == NULL)
+    return parse_primitive_expr();
 
-  while (token_try_advancing(1, TOKEN_SYMBOL_LPAREN))
+  if (token_try_advancing(1, TOKEN_SYMBOL_LPAREN) == NULL)
   {
-    root = ast_node_function_call_expr_create(root);
-
-    if (token_try_advancing(1, TOKEN_SYMBOL_RPAREN) == NULL)
-    {
-      do
-        ast_node_function_call_expr_append_argument(root, parse_expr());
-      while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
-             == TOKEN_SYMBOL_COMMA);
-    }
+    token_unget();
+    return parse_primitive_expr();
   }
 
-  return root;
+  ast_node_t *node = ast_node_function_call_expr_create(token_callee);
+
+  if (token_peek_next()->type == TOKEN_SYMBOL_RPAREN)
+    token_advance();
+  else
+  {
+    do
+      ast_node_function_call_expr_append_argument(node, parse_expr());
+    while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
+           == TOKEN_SYMBOL_COMMA);
+  }
+
+  return node;
 }
+
+// Switch to below when function types are supported.
+
+/* // <function_call_expression> ::= <primitive_expression> { "(" [ <function_call_argument_list> ] ")" } */
+
+/* static ast_node_t *parse_function_call_expr(void) */
+/* { */
+/*   ast_node_t *root = parse_primitive_expr(); */
+
+/*   while (token_try_advancing(1, TOKEN_SYMBOL_LPAREN)) */
+/*   { */
+/*     root = ast_node_function_call_expr_create(root); */
+
+/*     if (token_try_advancing(1, TOKEN_SYMBOL_RPAREN) == NULL) */
+/*     { */
+/*       do */
+/*         ast_node_function_call_expr_append_argument(root, parse_expr()); */
+/*       while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type */
+/*              == TOKEN_SYMBOL_COMMA); */
+/*     } */
+/*   } */
+
+/*   return root; */
+/* } */
 
 static ast_node_t *parse_prefix_expr(void)
 {

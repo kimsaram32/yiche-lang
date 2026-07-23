@@ -193,11 +193,11 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
  * function_call_expr
  */
 
-ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
+ast_node_t *ast_node_function_call_expr_create(token_t *token_callee)
 {
   ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_CALL_EXPR);
 
-  node->data_function_call_expr.callee = callee;
+  node->data_function_call_expr.token_callee = token_callee;
   node->data_function_call_expr.arguments = vector_pointer_create(8);
   if (node->data_function_call_expr.arguments == NULL)
     exit_out_of_memory();
@@ -213,7 +213,7 @@ void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *a
 
 AST_NODE_DEFINE_PRINT_FUNCTION(function_call_expr)
 {
-  AST_NODE_PRINT_CHILD("callee", node->data_function_call_expr.callee);
+  AST_NODE_PRINT_ATTR("callee", "%s", node->data_function_call_expr.token_callee->identifier);
   AST_NODE_PRINT_CHILDREN("arguments", node->data_function_call_expr.arguments);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END

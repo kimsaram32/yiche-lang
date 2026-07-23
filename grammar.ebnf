@@ -164,7 +164,7 @@
 <function_call_argument_list> ::= <expression> [ "," <function_call_argument_list> ]
 
 <function_call_expression> ::= <primitive_expression>
-                               | <function_call_expression> "(" [ <function_call_argument_list> ] ")"
+                               | <identifier> "(" [ <function_call_argument_list> ] ")"
 
 <prefix_expression> ::= <function_call_expression>
                        | ( "!" ) <prefix_expression>
