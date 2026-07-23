@@ -109,7 +109,7 @@ AST_NODE_DEFINE_PRINT_FUNCTION(primitive_expr)
       AST_NODE_PRINT_ATTR("constant", "%d", data->token->constant);
       break;
     default:
-      __builtin_unreachable();
+      UNREACHABLE;
   }
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END

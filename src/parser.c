@@ -322,7 +322,7 @@ static data_type_t parse_data_type(void)
     case TOKEN_KEYWORD_INT:
       return DATA_TYPE_INT;
     default:
-      __builtin_unreachable();
+      UNREACHABLE;
   }
 }
 

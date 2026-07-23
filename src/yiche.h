@@ -3,6 +3,8 @@
 
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+#define UNREACHABLE __builtin_unreachable()
+
 #endif
 
 #include "error.h"
