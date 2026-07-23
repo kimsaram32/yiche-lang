@@ -94,7 +94,7 @@ static ast_node_t *parse_prefix_expr(void)
         break;
     }
     *node_p = ast_node_unary_expr_create(operator, NULL);
-    node_p = &(DATA_UNARY_EXPR(*node_p))->operand;
+    node_p = &((*node_p)->data_unary_expr.operand);
   }
 
   *node_p = parse_function_call_expr();
@@ -199,7 +199,7 @@ static ast_node_t *parse_assignment_expr(void)
 
     ast_node_t *identifier_node = ast_node_primitive_expr_create(token_identifier);
     *node_p = ast_node_binary_expr_create(BINARY_OPERATOR_ASSIGNMENT, identifier_node, NULL);
-    node_p = &(DATA_BINARY_EXPR(*node_p)->right_operand);
+    node_p = &((*node_p)->data_binary_expr.right_operand);
   }
 
   *node_p = parse_logical_or_expr();
@@ -373,8 +373,8 @@ static ast_node_t *parse_function_decl(void)
 
   token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
 
-  DATA_FUNCTION_DECL(node)->return_data_type = parse_data_type();
-  DATA_FUNCTION_DECL(node)->body = parse_stmt_list();
+  node->data_function_decl.return_data_type = parse_data_type();
+  node->data_function_decl.body = parse_stmt_list();
 
   return node;
 }

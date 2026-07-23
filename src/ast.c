@@ -26,7 +26,6 @@ static char *data_type_to_string(data_type_t data_type)
 #define AST_NODE_DEFINE_PRINT_FUNCTION(name) \
   static void ast_node_ ## name ## _print(ast_node_t *node, int level) \
   { \
-    ast_node_ ## name ## _t *data = node->data; \
     printf("%s {\n", # name);
 
 #define AST_NODE_DEFINE_PRINT_FUNCTION_END \
@@ -68,20 +67,9 @@ static ast_node_t *ast_node_create(ast_node_type_t type)
     exit_out_of_memory();
 
   node->type = type;
-  node->data = NULL;
 
   return node;
 }
-
-#define AST_NODE_CREATE_WITH_DATA(node, data, type, data_type) do { \
-    node = ast_node_create(type); \
-    data = malloc(sizeof(data_type)); \
-    if (data == NULL) { \
-      exit_out_of_memory(); \
-    } \
-    node->data = data; \
-  } \
-  while (0)
 
 /*
  * primitive_expr
@@ -89,24 +77,22 @@ static ast_node_t *ast_node_create(ast_node_type_t type)
 
 ast_node_t *ast_node_primitive_expr_create(token_t *token)
 {
-  ast_node_t *node;
-  ast_node_primitive_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_PRIMITIVE_EXPR, ast_node_primitive_expr_t);
+  ast_node_t *node = ast_node_create(AST_NODE_PRIMITIVE_EXPR);
 
-  data->token = token;
+  node->data_primitive_expr.token = token;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(primitive_expr)
 {
-  switch (data->token->type)
+  switch (node->data_primitive_expr.token->type)
   {
     case TOKEN_IDENTIFIER:
-      AST_NODE_PRINT_ATTR("identifier", "%s", data->token->identifier);
+      AST_NODE_PRINT_ATTR("identifier", "%s", node->data_primitive_expr.token->identifier);
       break;
     case TOKEN_CONSTANT:
-      AST_NODE_PRINT_ATTR("constant", "%d", data->token->constant);
+      AST_NODE_PRINT_ATTR("constant", "%d", node->data_primitive_expr.token->constant);
       break;
     default:
       UNREACHABLE;
@@ -120,12 +106,10 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_unary_expr_create(unary_operator_t operator, ast_node_t *operand)
 {
-  ast_node_t *node;
-  ast_node_unary_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_UNARY_EXPR, ast_node_unary_expr_t);
+  ast_node_t *node = ast_node_create(AST_NODE_UNARY_EXPR);
 
-  data->operator = operator;
-  data->operand = operand;
+  node->data_unary_expr.operator = operator;
+  node->data_unary_expr.operand = operand;
 
   return node;
 }
@@ -141,8 +125,8 @@ char *unary_operator_to_string(unary_operator_t operator)
 
 AST_NODE_DEFINE_PRINT_FUNCTION(unary_expr)
 {
-  AST_NODE_PRINT_ATTR("operator", "%s", unary_operator_to_string(data->operator));
-  AST_NODE_PRINT_CHILD("operand", data->operand);
+  AST_NODE_PRINT_ATTR("operator", "%s", unary_operator_to_string(node->data_unary_expr.operator));
+  AST_NODE_PRINT_CHILD("operand", node->data_unary_expr.operand);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -153,13 +137,11 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *left_operand,
                                         ast_node_t *right_operand)
 {
-  ast_node_t *node;
-  ast_node_binary_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_BINARY_EXPR, ast_node_binary_expr_t);
+  ast_node_t *node = ast_node_create(AST_NODE_BINARY_EXPR);
 
-  data->operator = operator;
-  data->left_operand = left_operand;
-  data->right_operand = right_operand;
+  node->data_binary_expr.operator = operator;
+  node->data_binary_expr.left_operand = left_operand;
+  node->data_binary_expr.right_operand = right_operand;
 
   return node;
 }
@@ -201,9 +183,9 @@ char *binary_operator_to_string(binary_operator_t operator)
 
 AST_NODE_DEFINE_PRINT_FUNCTION(binary_expr)
 {
-  AST_NODE_PRINT_ATTR("operator", "%s", binary_operator_to_string(data->operator));
-  AST_NODE_PRINT_CHILD("left", data->left_operand);
-  AST_NODE_PRINT_CHILD("right", data->right_operand);
+  AST_NODE_PRINT_ATTR("operator", "%s", binary_operator_to_string(node->data_binary_expr.operator));
+  AST_NODE_PRINT_CHILD("left", node->data_binary_expr.left_operand);
+  AST_NODE_PRINT_CHILD("right", node->data_binary_expr.right_operand);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -213,13 +195,11 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
 {
-  ast_node_t *node;
-  ast_node_function_call_expr_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_FUNCTION_CALL_EXPR, ast_node_function_call_expr_t);
+  ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_CALL_EXPR);
 
-  data->callee = callee;
-  data->arguments = vector_pointer_create(8);
-  if (data->arguments == NULL)
+  node->data_function_call_expr.callee = callee;
+  node->data_function_call_expr.arguments = vector_pointer_create(8);
+  if (node->data_function_call_expr.arguments == NULL)
     exit_out_of_memory();
 
   return node;
@@ -227,14 +207,14 @@ ast_node_t *ast_node_function_call_expr_create(ast_node_t *callee)
 
 void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg)
 {
-  if (!vector_pointer_append(DATA_FUNCTION_CALL_EXPR(node)->arguments, arg))
+  if (!vector_pointer_append(node->data_function_call_expr.arguments, arg))
     exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(function_call_expr)
 {
-  AST_NODE_PRINT_CHILD("callee", data->callee);
-  AST_NODE_PRINT_CHILDREN("arguments", data->arguments);
+  AST_NODE_PRINT_CHILD("callee", node->data_function_call_expr.callee);
+  AST_NODE_PRINT_CHILDREN("arguments", node->data_function_call_expr.arguments);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -244,12 +224,10 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_stmt_list_create(void)
 {
-  ast_node_t *node;
-  ast_node_stmt_list_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_STMT_LIST, ast_node_stmt_list_t);
+  ast_node_t *node = ast_node_create(AST_NODE_STMT_LIST);
 
-  data->stmts = vector_pointer_create(8);
-  if (data->stmts == NULL)
+  node->data_stmt_list.stmts = vector_pointer_create(8);
+  if (node->data_stmt_list.stmts == NULL)
     exit_out_of_memory();
 
   return node;
@@ -257,13 +235,13 @@ ast_node_t *ast_node_stmt_list_create(void)
 
 void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt)
 {
-  if (!vector_pointer_append(DATA_STMT_LIST(node)->stmts, stmt))
+  if (!vector_pointer_append(node->data_stmt_list.stmts, stmt))
     exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(stmt_list)
 {
-  AST_NODE_PRINT_CHILDREN("stmts", data->stmts);
+  AST_NODE_PRINT_CHILDREN("stmts", node->data_stmt_list.stmts);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -273,18 +251,16 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_expr_stmt_create(ast_node_t *expr)
 {
-  ast_node_t *node;
-  ast_node_expr_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_EXPR_STMT, ast_node_expr_stmt_t);
+  ast_node_t *node = ast_node_create(AST_NODE_EXPR_STMT);
 
-  data->expr = expr;
+  node->data_expr_stmt.expr = expr;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(expr_stmt)
 {
-  AST_NODE_PRINT_CHILD("expr", data->expr);
+  AST_NODE_PRINT_CHILD("expr", node->data_expr_stmt.expr);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -294,20 +270,18 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_if_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
 {
-  ast_node_t *node;
-  ast_node_if_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_IF_STMT, ast_node_if_stmt_t);
+  ast_node_t *node = ast_node_create(AST_NODE_IF_STMT);
 
-  data->cond_expr = cond_expr;
-  data->stmt_list = stmt_list;
+  node->data_if_stmt.cond_expr = cond_expr;
+  node->data_if_stmt.stmt_list = stmt_list;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(if_stmt)
 {
-  AST_NODE_PRINT_CHILD("expr", data->cond_expr);
-  AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
+  AST_NODE_PRINT_CHILD("expr", node->data_if_stmt.cond_expr);
+  AST_NODE_PRINT_CHILD("stmt_list", node->data_if_stmt.stmt_list);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -317,20 +291,18 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_while_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
 {
-  ast_node_t *node;
-  ast_node_while_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_WHILE_STMT, ast_node_while_stmt_t);
+  ast_node_t *node = ast_node_create(AST_NODE_WHILE_STMT);
 
-  data->cond_expr = cond_expr;
-  data->stmt_list = stmt_list;
+  node->data_while_stmt.cond_expr = cond_expr;
+  node->data_while_stmt.stmt_list = stmt_list;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(while_stmt)
 {
-  AST_NODE_PRINT_CHILD("expr", data->cond_expr);
-  AST_NODE_PRINT_CHILD("stmt_list", data->stmt_list);
+  AST_NODE_PRINT_CHILD("expr", node->data_while_stmt.cond_expr);
+  AST_NODE_PRINT_CHILD("stmt_list", node->data_while_stmt.stmt_list);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -340,18 +312,16 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_return_stmt_create(ast_node_t *expr)
 {
-  ast_node_t *node;
-  ast_node_return_stmt_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_RETURN_STMT, ast_node_return_stmt_t);
+  ast_node_t *node = ast_node_create(AST_NODE_RETURN_STMT);
 
-  data->expr = expr;
+  node->data_return_stmt.expr = expr;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(return_stmt)
 {
-  AST_NODE_PRINT_CHILD("expr", data->expr);
+  AST_NODE_PRINT_CHILD("expr", node->data_return_stmt.expr);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -362,24 +332,22 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_variable_decl_create(token_t *token_identifier,
                                           data_type_t data_type, ast_node_t *initializer)
 {
-  ast_node_t *node;
-  ast_node_variable_decl_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_VARIABLE_DECL, ast_node_variable_decl_t);
+  ast_node_t *node = ast_node_create(AST_NODE_VARIABLE_DECL);
 
-  data->token_identifier = token_identifier;
-  data->data_type = data_type;
-  data->initializer = initializer;
+  node->data_variable_decl.token_identifier = token_identifier;
+  node->data_variable_decl.data_type = data_type;
+  node->data_variable_decl.initializer = initializer;
 
   return node;
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(variable_decl)
 {
-  AST_NODE_PRINT_ATTR("identifier", "%s", data->token_identifier->identifier);
-  AST_NODE_PRINT_ATTR("data_type", "%s", data_type_to_string(data->data_type));
+  AST_NODE_PRINT_ATTR("identifier", "%s", node->data_variable_decl.token_identifier->identifier);
+  AST_NODE_PRINT_ATTR("data_type", "%s", data_type_to_string(node->data_variable_decl.data_type));
 
-  if (data->initializer != NULL)
-    AST_NODE_PRINT_CHILD("initializer", data->initializer);
+  if (node->data_variable_decl.initializer != NULL)
+    AST_NODE_PRINT_CHILD("initializer", node->data_variable_decl.initializer);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -389,13 +357,11 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
 {
-  ast_node_t *node;
-  ast_node_function_decl_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_FUNCTION_DECL, ast_node_function_decl_t);
+  ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_DECL);
 
-  data->token_identifier = token_identifier;
-  data->parameters = vector_pointer_create(8);
-  if (data->parameters == NULL)
+  node->data_function_decl.token_identifier = token_identifier;
+  node->data_function_decl.parameters = vector_pointer_create(8);
+  if (node->data_function_decl.parameters == NULL)
     exit_out_of_memory();
 
   return node;
@@ -403,16 +369,17 @@ ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
 
 void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter)
 {
-  if (!vector_pointer_append(DATA_FUNCTION_DECL(node)->parameters, parameter))
+  if (!vector_pointer_append(node->data_function_decl.parameters, parameter))
     exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(function_decl)
 {
-  AST_NODE_PRINT_ATTR("identifier", "%s", data->token_identifier->identifier);
-  AST_NODE_PRINT_ATTR("return_data_type", "%s", data_type_to_string(data->return_data_type));
-  AST_NODE_PRINT_CHILDREN("parameters", data->parameters);
-  AST_NODE_PRINT_CHILD("body", data->body);
+  AST_NODE_PRINT_ATTR("identifier", "%s", node->data_function_decl.token_identifier->identifier);
+  AST_NODE_PRINT_ATTR("return_data_type", "%s",
+                      data_type_to_string(node->data_function_decl.return_data_type));
+  AST_NODE_PRINT_CHILDREN("parameters", node->data_function_decl.parameters);
+  AST_NODE_PRINT_CHILD("body", node->data_function_decl.body);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 
@@ -422,12 +389,10 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 
 ast_node_t *ast_node_program_create(void)
 {
-  ast_node_t *node;
-  ast_node_program_t *data;
-  AST_NODE_CREATE_WITH_DATA(node, data, AST_NODE_PROGRAM, ast_node_program_t);
+  ast_node_t *node = ast_node_create(AST_NODE_PROGRAM);
 
-  data->decls = vector_pointer_create(8);
-  if (data->decls == NULL)
+  node->data_program.decls = vector_pointer_create(8);
+  if (node->data_program.decls == NULL)
     exit_out_of_memory();
 
   return node;
@@ -435,13 +400,13 @@ ast_node_t *ast_node_program_create(void)
 
 void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl)
 {
-  if (!vector_pointer_append(DATA_PROGRAM(node)->decls, decl))
+  if (!vector_pointer_append(node->data_program.decls, decl))
     exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(program)
 {
-  AST_NODE_PRINT_CHILDREN("decls", data->decls);
+  AST_NODE_PRINT_CHILDREN("decls", node->data_program.decls);
 }
 AST_NODE_DEFINE_PRINT_FUNCTION_END
 

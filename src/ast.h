@@ -33,18 +33,11 @@ typedef enum
 }
 data_type_t;
 
-typedef struct
-{
-  ast_node_type_t type;
-  void *data;
-}
-ast_node_t;
+typedef struct ast_node_t ast_node_t;
 
 /*
  * primitive_expr
  */
-
-#define DATA_PRIMITIVE_EXPR(node) ((ast_node_primitive_expr_t*)((node)->data))
 
 typedef struct
 {
@@ -57,8 +50,6 @@ ast_node_t *ast_node_primitive_expr_create(token_t *token);
 /*
  * unary_expr
  */
-
-#define DATA_UNARY_EXPR(node) ((ast_node_unary_expr_t*)((node)->data))
 
 typedef enum
 {
@@ -80,8 +71,6 @@ ast_node_t *ast_node_unary_expr_create(unary_operator_t operator, ast_node_t *op
 /*
  * binary_expr
  */
-
-#define DATA_BINARY_EXPR(node) ((ast_node_binary_expr_t*)((node)->data))
 
 typedef enum
 {
@@ -122,8 +111,6 @@ ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *
  * function_call_expr
  */
 
-#define DATA_FUNCTION_CALL_EXPR(node) ((ast_node_function_call_expr_t*)((node)->data))
-
 typedef struct
 {
   ast_node_t *callee; // expression
@@ -138,8 +125,6 @@ void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *a
  * stmt_list
  */
 
-#define DATA_STMT_LIST(node) ((ast_node_stmt_list_t*)((node)->data))
-
 typedef struct
 {
   VECTOR_T(ast_node_t*) *stmts; // ast_node_stmt_t
@@ -153,8 +138,6 @@ void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt);
  * expr_stmt
  */
 
-#define DATA_EXPR_STMT(node) ((ast_node_expr_stmt_t*)((node)->data))
-
 typedef struct
 {
   ast_node_t *expr; // expression
@@ -166,8 +149,6 @@ ast_node_t *ast_node_expr_stmt_create(ast_node_t *expr);
 /*
  * if_stmt
  */
-
-#define DATA_IF_STMT(node) ((ast_node_if_stmt_t*)((node)->data))
 
 typedef struct
 {
@@ -182,8 +163,6 @@ ast_node_t *ast_node_if_stmt_create(ast_node_t *expr, ast_node_t *stmt_list);
  * while_stmt
  */
 
-#define DATA_WHILE_STMT(node) ((ast_node_while_stmt_t*)((node)->data))
-
 typedef struct
 {
   ast_node_t *cond_expr; // expression
@@ -197,8 +176,6 @@ ast_node_t *ast_node_while_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_l
  * return_stmt
  */
 
-#define DATA_RETURN_STMT(node) ((ast_node_return_stmt_t*)((node)->data))
-
 typedef struct
 {
   ast_node_t *expr; // expression
@@ -210,8 +187,6 @@ ast_node_t *ast_node_return_stmt_create(ast_node_t *expr);
 /*
  * variable_decl
  */
-
-#define DATA_VARIABLE_DECL(node) ((ast_node_variable_decl_t*)((node)->data))
 
 typedef struct
 {
@@ -227,8 +202,6 @@ ast_node_t *ast_node_variable_decl_create(token_t *token_identifier,
 /*
  * function_decl
  */
-
-#define DATA_FUNCTION_DECL(node) ((ast_node_function_decl_t*)((node)->data))
 
 typedef struct
 {
@@ -246,17 +219,39 @@ void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *param
  * program
  */
 
-#define DATA_PROGRAM(node) ((ast_node_program_t*)((node)->data))
-
 typedef struct
 {
   VECTOR_T(ast_node_t*) *decls; // declaration
-  data_type_t return_data_type;
 }
 ast_node_program_t;
 
 ast_node_t *ast_node_program_create(void);
 void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl);
+
+/*
+ * node definition
+ */
+
+typedef struct ast_node_t
+{
+  ast_node_type_t type;
+  union
+  {
+    ast_node_primitive_expr_t data_primitive_expr;
+    ast_node_unary_expr_t data_unary_expr;
+    ast_node_binary_expr_t data_binary_expr;
+    ast_node_function_call_expr_t data_function_call_expr;
+    ast_node_stmt_list_t data_stmt_list;
+    ast_node_expr_stmt_t data_expr_stmt;
+    ast_node_if_stmt_t data_if_stmt;
+    ast_node_while_stmt_t data_while_stmt;
+    ast_node_return_stmt_t data_return_stmt;
+    ast_node_variable_decl_t data_variable_decl;
+    ast_node_function_decl_t data_function_decl;
+    ast_node_program_t data_program;
+  };
+}
+ast_node_t;
 
 /*
  * Printing
