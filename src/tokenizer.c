@@ -218,21 +218,21 @@ static int get_escape_character_value(char c)
     case '0':
       return '\0';
     case 'a':
-      return '\a';
+      return '\x07'; // BEL
     case 'b':
-      return '\b';
+      return '\x08'; // BS
     case 't':
-      return '\t';
+      return '\x09'; // HT
     case 'n':
-      return '\n';
+      return '\x0A'; // LF
     case 'v':
-      return '\v';
+      return '\x0B'; // VT
     case 'f':
-      return '\f';
+      return '\x0C'; // FF
     case 'r':
-      return '\r';
+      return '\x0D'; // CR
     case 'e':
-      return '\e';
+      return '\x1B'; // ESC
     case '\'':
     case '\\':
       return c;
