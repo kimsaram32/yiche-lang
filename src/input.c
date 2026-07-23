@@ -43,8 +43,8 @@ unsigned char input_advance_char(void)
 
 unsigned char input_peek_char(int n)
 {
-  if (n < 0)
-    exit_with_error("input_peek_char(): 'n' must be a non-negative integer");
+  if (n <= 0)
+    exit_with_error("input_peek_char(): 'n' must be a positive integer");
 
   int peeking = input_next_index + n - 1;
 
