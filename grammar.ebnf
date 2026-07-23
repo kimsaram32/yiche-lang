@@ -115,7 +115,7 @@
 
 <type_specifier> ::= "int"
 
-<initializer> ::= "=" <constant>
+<initializer> ::= "=" <expression>
 
 <variable_declaration> ::= "var" <identifier> ":" <type_specifier> [ <initializer> ] ";"
 
