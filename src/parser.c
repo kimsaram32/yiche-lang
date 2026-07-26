@@ -68,7 +68,11 @@ static ast_node_t *parse_function_call_expr(void)
 
   ast_node_t *node = ast_node_function_call_expr_create(token_callee);
 
-  if (token_peek_next()->type == TOKEN_SYMBOL_RPAREN)
+  token_t *next = token_peek_next();
+  if (next == NULL)
+    exit_with_error("expected a token, got nothing\n");
+
+  if (next->type == TOKEN_SYMBOL_RPAREN)
     token_advance();
   else
   {
@@ -248,7 +252,7 @@ static ast_node_t *parse_stmt_list(void)
 
   ast_node_t *node = ast_node_stmt_list_create();
 
-  while ((token = token_peek_next())->type != TOKEN_SYMBOL_RBRACE)
+  while ((token = token_peek_next()) != NULL && token->type != TOKEN_SYMBOL_RBRACE)
   {
     switch (token->type)
     {
@@ -272,6 +276,9 @@ static ast_node_t *parse_stmt_list(void)
         break;
     }
   }
+
+  if (token == NULL)
+    exit_with_error("expected a token, got nothing\n");
 
   token_advance();
 
