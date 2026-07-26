@@ -2,12 +2,17 @@
 #define YICHE_ERROR_H
 
 #include <stdlib.h>
+#include "tokenizer.h"
 
 #define exit_with_error(s, ...) do { \
   fprintf(stderr, s, ## __VA_ARGS__); \
   exit(EXIT_FAILURE); \
 } while (0)
 
-void exit_out_of_memory(void);
+NORETURN void exit_out_of_memory(void);
+
+NORETURN void exit_lexical_error(char *s);
+NORETURN void exit_parsing_error_unexpected_token(token_t *token);
+NORETURN void exit_parsing_error_no_tokens(void);
 
 #endif

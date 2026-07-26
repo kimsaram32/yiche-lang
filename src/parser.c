@@ -70,7 +70,7 @@ static ast_node_t *parse_function_call_expr(void)
 
   token_t *next = token_peek_next();
   if (next == NULL)
-    exit_with_error("expected a token, got nothing\n");
+    exit_parsing_error_no_tokens();
 
   if (next->type == TOKEN_SYMBOL_RPAREN)
     token_advance();
@@ -174,7 +174,7 @@ static binary_operator_t get_binary_operator(token_type_t symbol_type)
       return BINARY_OPERATOR_ASSIGNMENT;
 
     default:
-      exit_with_error("get_binary_operator_type: missing binary operator mapping for symbol %d", symbol_type);
+      exit_with_error("get_binary_operator_type(): missing binary operator mapping for symbol %d", symbol_type);
   }
 }
 
@@ -278,7 +278,7 @@ static ast_node_t *parse_stmt_list(void)
   }
 
   if (token == NULL)
-    exit_with_error("expected a token, got nothing\n");
+    exit_parsing_error_no_tokens();
 
   token_advance();
 
@@ -435,7 +435,7 @@ ast_node_t *parse(void)
         ast_node_program_append_decl(node, parse_function_decl());
         break;
       default:
-        exit_with_error("unexpected token\n");
+        exit_parsing_error_unexpected_token(token);
         break;
     }
   }

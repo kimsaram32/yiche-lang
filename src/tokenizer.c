@@ -4,13 +4,6 @@
 #include <stdarg.h>
 #include "yiche.h"
 
-static void exit_with_lexical_error(char *s)
-{
-  input_char_t last_char = input_get_last_char();
-  exit_with_error("lexical error at line %d, column %d ('%c'):\n%s",
-                  last_char.line, last_char.column, last_char.c, s);
-}
-
 VECTOR_T(token_t) *tokens;
 
 /*
@@ -29,7 +22,7 @@ static void skip_multi_line_comment(void)
       return;
   }
 
-  exit_with_lexical_error("unclosed multi-line comment");
+  exit_lexical_error("unclosed multi-line comment");
 }
 
 static int string_to_keyword(char *s)
@@ -152,7 +145,7 @@ static token_type_t read_symbol(char initial)
   int type;
 
   if ((type = get_symbol_1(initial)) == -1)
-    exit_with_lexical_error("invalid symbol");
+    exit_lexical_error("invalid symbol");
 
   char *buf = calloc(3, sizeof(char));
   buf[0] = initial;
@@ -246,19 +239,19 @@ static int read_character_constant(void)
   int c = input_advance_char(), val;
 
   if (c == '\'')
-    exit_with_lexical_error("empty character constant '' not allowed");
+    exit_lexical_error("empty character constant '' not allowed");
   else if (c == '\\')
   {
     if ((val = get_escape_character_value(input_advance_char())) == -1)
-      exit_with_lexical_error("invalid escape sequence");
+      exit_lexical_error("invalid escape sequence");
   }
   else if (is_visible_character(c) || c == ' ' || c == '\t')
     val = c;
   else
-    exit_with_lexical_error("invalid character constant sequence");
+    exit_lexical_error("invalid character constant sequence");
 
   if (input_advance_char() != '\'')
-    exit_with_lexical_error("invalid character constant sequence");
+    exit_lexical_error("invalid character constant sequence");
 
   return val;
 }
@@ -371,7 +364,7 @@ token_t *token_advance_and_assert(int n, ...)
   va_list types;
   token_t *token = token_advance();
   if (token == NULL)
-    exit_with_error("expected a token, got nothing\n");
+    exit_parsing_error_no_tokens();
 
   for (va_start(types, n); n--;)
   {
@@ -383,8 +376,7 @@ token_t *token_advance_and_assert(int n, ...)
   }
 
   va_end(types);
-  exit_with_error("syntax error at line %d: unexpected token '%s'\n",
-                  token->char_begin.line, token->lexeme);
+  exit_parsing_error_unexpected_token(token);
 }
 
 token_t *token_try_advancing(int n, ...)

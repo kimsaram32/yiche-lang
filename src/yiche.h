@@ -4,6 +4,7 @@
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 #define UNREACHABLE __builtin_unreachable()
+#define NORETURN __attribute__((__noreturn__))
 
 #endif
 

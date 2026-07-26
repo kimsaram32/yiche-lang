@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "input.h"
+#include "vector.h"
 
 /*
  * Token type
