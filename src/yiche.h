@@ -17,3 +17,4 @@
 #include "ast.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "evaluator.h"

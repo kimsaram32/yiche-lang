@@ -81,14 +81,8 @@ static char *symbol_to_string(token_type_t symbol_type)
   }
 }
 
-int main(void)
+void print_tokens(void)
 {
-  input_init();
-
-  printf("TOKENIZING\n");
-
-  tokenize();
-
   token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
 
   for (int i = 0; i < tokens->length; i++)
@@ -103,11 +97,23 @@ int main(void)
     else // symbol
       printf("symbol: %s\n", symbol_to_string(token.type));
   }
+}
+
+int main(void)
+{
+  input_init();
+
+  printf("TOKENIZING\n");
+  tokenize();
+  print_tokens();
 
   printf("PARSING\n");
-
   ast_node_t *root = parse();
   ast_node_print(root);
+
+  printf("EVALUATING\n");
+  evaluate_value_t result = evaluate(root);
+  printf("returned %d\n", result.value_int);
 
   return 0;
 }
