@@ -9,7 +9,9 @@
 #endif
 
 #include "error.h"
+#include "hash_table.h"
 #include "vector.h"
+
 #include "character.h"
 #include "input.h"
 #include "ast.h"

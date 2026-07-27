@@ -9,7 +9,7 @@ typedef struct
 }
 vector_t;
 
-// To promote clarity, the macro VECTOR_T(type) is preferred in type specifiers
+// To promote clarity, the macro 'VECTOR_T(type)' is preferred in type specifiers
 // whenever possible.
 //
 // Example usage:
