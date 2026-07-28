@@ -22,8 +22,9 @@ typedef struct
 }
 symbol_table_entry_t;
 
-static void symbol_table_entry_free(symbol_table_entry_t *entry)
+static void symbol_table_entry_free(void *p)
 {
+  symbol_table_entry_t *entry = p;
   free(entry);
 }
 
@@ -43,7 +44,7 @@ static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent)
     return NULL;
 
   env->symbol_table = hash_table_create(EVALUATE_ENV_SYMBOL_TABLE_INITIAL_CAPACITY,
-                                        (payload_destructor_t)symbol_table_entry_free);
+                                        symbol_table_entry_free);
   if (env->symbol_table == NULL)
   {
     free(env);
