@@ -51,7 +51,32 @@ static size_t next_prime(size_t n)
   return n;
 }
 
-static hash_table_node_t **hash_table_create_buckets_array(size_t capacity)
+hash_table_node_t *hash_table_node_create(char *key, void *payload)
+{
+  hash_table_node_t *node = malloc(sizeof(hash_table_node_t));
+  if (node == NULL)
+    return NULL;
+
+  node->key = malloc(sizeof(char) * (strlen(key) + 1));
+  if (node->key == NULL)
+  {
+    free(node);
+    return NULL;
+  }
+  strcpy(node->key, key);
+  node->payload = payload;
+
+  return node;
+}
+
+static void hash_table_node_free(hash_table_node_t *node, hash_table_t *table)
+{
+  free(node->key);
+  table->payload_destructor(node->payload);
+  free(node);
+}
+
+static hash_table_node_t **hash_table_buckets_array_create(size_t capacity)
 {
   hash_table_node_t **buckets = malloc(sizeof(hash_table_node_t*) * capacity);
 
@@ -66,7 +91,7 @@ static hash_table_node_t **hash_table_create_buckets_array(size_t capacity)
 
 static int hash_table_resize(hash_table_t *table, size_t new_capacity)
 {
-  hash_table_node_t **new_buckets = hash_table_create_buckets_array(new_capacity);
+  hash_table_node_t **new_buckets = hash_table_buckets_array_create(new_capacity);
   if (new_buckets == NULL)
     return 0;
 
@@ -99,7 +124,7 @@ hash_table_t *hash_table_create(size_t capacity, payload_destructor_t payload_de
   if (table == NULL)
     return NULL;
 
-  if ((table->buckets = hash_table_create_buckets_array(capacity)) == NULL)
+  if ((table->buckets = hash_table_buckets_array_create(capacity)) == NULL)
   {
     free(table);
     return NULL;
@@ -118,9 +143,7 @@ void hash_table_free(hash_table_t *table)
     for (hash_table_node_t *node = table->buckets[i], *next; node != NULL; node = next)
     {
       next = node->next;
-      free(node->key);
-      table->payload_destructor(node->payload);
-      free(node);
+      hash_table_node_free(node, table);
     }
 
   free(table->buckets);
@@ -143,18 +166,9 @@ void *hash_table_search(hash_table_t *table, char *key)
 
 int hash_table_insert(hash_table_t *table, char *key, void *payload)
 {
-  hash_table_node_t *node = malloc(sizeof(hash_table_node_t));
+  hash_table_node_t *node = hash_table_node_create(key, payload);
   if (node == NULL)
     return 0;
-
-  node->key = malloc(sizeof(char*) * (strlen(key) + 1));
-  if (node->key == NULL)
-  {
-    free(node);
-    return 0;
-  }
-  strcpy(node->key, key);
-  node->payload = payload;
 
   size_t hash = hash_table_compute_hash(key, table->capacity);
   node->prev = NULL;
@@ -189,8 +203,7 @@ void hash_table_delete(hash_table_t *table, char *key)
   if (node->next != NULL)
     node->next->prev = node->prev;
 
-  table->payload_destructor(node->payload);
-  free(node);
+  hash_table_node_free(node, table);
 
   table->size--;
 }
