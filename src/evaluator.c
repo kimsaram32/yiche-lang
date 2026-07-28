@@ -305,65 +305,78 @@ static evaluate_value_t evaluate_unary_expr(evaluate_context_t *ctx, ast_node_t 
 
 static evaluate_value_t evaluate_binary_expr(evaluate_context_t *ctx, ast_node_t *node)
 {
-  evaluate_value_t lhs = evaluate_expr(ctx, node->data_binary_expr.left_operand),
-                   rhs = evaluate_expr(ctx, node->data_binary_expr.right_operand);
+  binary_operator_t operator = node->data_binary_expr.operator;
+
+  ast_node_t *lhs_node = node->data_binary_expr.left_operand,
+             *rhs_node = node->data_binary_expr.right_operand;
 
   // TODO: Refactor assignment expression to a separate AST node type
-  if (node->data_binary_expr.operator == BINARY_OPERATOR_ASSIGNMENT)
+  if (operator == BINARY_OPERATOR_ASSIGNMENT)
   {
-    ast_node_t *left_operand = node->data_binary_expr.left_operand;
-    char *identifier = left_operand->data_primitive_expr.token->identifier;
+    char *identifier = lhs_node->data_primitive_expr.token->identifier;
     symbol_table_entry_t *entry = evaluate_env_lookup_variable(ctx->current_env, identifier);
-    entry->variable_value = rhs;
-    return rhs;
+
+    entry->variable_value = evaluate_expr(ctx, rhs_node);
+    return entry->variable_value;
   }
 
-  evaluate_value_t result;
-  result.data_type = DATA_TYPE_INT;
+  evaluate_value_t result = {
+    .data_type = DATA_TYPE_INT,
+  };
 
-  switch (node->data_binary_expr.operator)
+  if (operator == BINARY_OPERATOR_LOGICAL_AND)
   {
-    case BINARY_OPERATOR_ADDITION:
-      result.value_int = lhs.value_int + rhs.value_int;
-      break;
-    case BINARY_OPERATOR_SUBTRACTION:
-      result.value_int = lhs.value_int - rhs.value_int;
-      break;
-    case BINARY_OPERATOR_MULTIPLICATION:
-      result.value_int = lhs.value_int * rhs.value_int;
-      break;
-    case BINARY_OPERATOR_DIVISION:
-      result.value_int = lhs.value_int / rhs.value_int;
-      break;
-    case BINARY_OPERATOR_MODULO:
-      result.value_int = lhs.value_int % rhs.value_int;
-      break;
-    case BINARY_OPERATOR_LESS_THAN:
-      result.value_int = lhs.value_int < rhs.value_int;
-      break;
-    case BINARY_OPERATOR_GREATER_THAN:
-      result.value_int = lhs.value_int > rhs.value_int;
-      break;
-    case BINARY_OPERATOR_LESS_THAN_EQUAL_TO:
-      result.value_int = lhs.value_int <= rhs.value_int;
-      break;
-    case BINARY_OPERATOR_GREATER_THAN_EQUAL_TO:
-      result.value_int = lhs.value_int >= rhs.value_int;
-      break;
-    case BINARY_OPERATOR_EQUALS:
-      result.value_int = lhs.value_int == rhs.value_int;
-      break;
-    case BINARY_OPERATOR_NOT_EQUALS:
-      result.value_int = lhs.value_int != rhs.value_int;
-      break;
-    case BINARY_OPERATOR_LOGICAL_AND:
-      result.value_int = lhs.value_int && rhs.value_int;
-      break;
-    case BINARY_OPERATOR_LOGICAL_OR:
-      result.value_int = lhs.value_int || rhs.value_int;
-      break;
-    default:
-      UNREACHABLE;
+    result.value_int = evaluate_expr(ctx, lhs_node).value_int
+                       && evaluate_expr(ctx, rhs_node).value_int;
+  }
+  else if (operator == BINARY_OPERATOR_LOGICAL_OR)
+  {
+    result.value_int = evaluate_expr(ctx, lhs_node).value_int
+                       || evaluate_expr(ctx, rhs_node).value_int;
+  }
+  else
+  {
+    int lhs_value = evaluate_expr(ctx, lhs_node).value_int,
+        rhs_value = evaluate_expr(ctx, rhs_node).value_int;
+
+    switch (operator)
+    {
+      case BINARY_OPERATOR_ADDITION:
+        result.value_int = lhs_value + rhs_value;
+        break;
+      case BINARY_OPERATOR_SUBTRACTION:
+        result.value_int = lhs_value - rhs_value;
+        break;
+      case BINARY_OPERATOR_MULTIPLICATION:
+        result.value_int = lhs_value * rhs_value;
+        break;
+      case BINARY_OPERATOR_DIVISION:
+        result.value_int = lhs_value / rhs_value;
+        break;
+      case BINARY_OPERATOR_MODULO:
+        result.value_int = lhs_value % rhs_value;
+        break;
+      case BINARY_OPERATOR_LESS_THAN:
+        result.value_int = lhs_value < rhs_value;
+        break;
+      case BINARY_OPERATOR_GREATER_THAN:
+        result.value_int = lhs_value > rhs_value;
+        break;
+      case BINARY_OPERATOR_LESS_THAN_EQUAL_TO:
+        result.value_int = lhs_value <= rhs_value;
+        break;
+      case BINARY_OPERATOR_GREATER_THAN_EQUAL_TO:
+        result.value_int = lhs_value >= rhs_value;
+        break;
+      case BINARY_OPERATOR_EQUALS:
+        result.value_int = lhs_value == rhs_value;
+        break;
+      case BINARY_OPERATOR_NOT_EQUALS:
+        result.value_int = lhs_value != rhs_value;
+        break;
+      default:
+        UNREACHABLE;
+    }
   }
 
   return result;
