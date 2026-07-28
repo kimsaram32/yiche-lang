@@ -25,8 +25,8 @@ void *hash_table_search(hash_table_t *table, char *key);
 // Insert an entry to 'table' with 'key' and 'payload'. Assumes that there is no
 // entry in 'table' with the same key, and no further checks are performed.
 //
-// Returns 1 if the entry gets successfully inserted, and 0 if an internal error
-// occurs.
+// Returns 1 if the entry gets successfully inserted, and 0 if an out-of-memory
+// error occurs.
 int hash_table_insert(hash_table_t *table, char *key, void *payload);
 
 // Throws an error if an entry with the key does not exist.

@@ -104,7 +104,8 @@ static void evaluate_env_add_symbol_table_entry(evaluate_env_t *env, symbol_tabl
   if (hash_table_search(env->symbol_table, entry->symbol_identifier))
     exit_runtime_error("identifier '%s' already declared in the current scope", entry->symbol_identifier);
 
-  hash_table_insert(env->symbol_table, entry->symbol_identifier, entry);
+  if (!hash_table_insert(env->symbol_table, entry->symbol_identifier, entry))
+    exit_out_of_memory();
 }
 
 /*
@@ -386,7 +387,7 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
   evaluate_value_t returned_value =
     call_function(ctx,symbol_table_function_entry->function_node, argument_values);
 
-  free(argument_values);
+  vector_free(argument_values);
   return returned_value;
 }
 
