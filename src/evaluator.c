@@ -31,13 +31,14 @@ static void symbol_table_entry_free(void *p)
 typedef struct evaluate_env_t
 {
   HASH_TABLE_T(symbol_table_entry_t) *symbol_table;
-  struct evaluate_env_t *parent;
+  struct evaluate_env_t *parent, *prev;
 }
 evaluate_env_t;
 
 #define EVALUATE_ENV_SYMBOL_TABLE_INITIAL_CAPACITY 107
 
-static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent)
+// The ownership to prev (but not parent) is transferred to the new environment.
+static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent, evaluate_env_t *prev)
 {
   evaluate_env_t *env = malloc(sizeof(evaluate_env_t));
   if (env == NULL)
@@ -52,11 +53,13 @@ static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent)
   }
 
   env->parent = parent;
+  env->prev = prev;
 
   return env;
 }
 
-// The parent environment ('env->parent') is not released.
+// Because the previous environment (env->prev) is not freed, its ownership
+// should be transferred before calling the function.
 static void evaluate_env_free(evaluate_env_t *env)
 {
   hash_table_free(env->symbol_table);
@@ -114,7 +117,7 @@ static void evaluate_env_add_symbol_table_entry(evaluate_env_t *env, symbol_tabl
 
 typedef struct
 {
-  evaluate_env_t *current_env;
+  evaluate_env_t *current_env, *global_env;
 }
 evaluate_context_t;
 
@@ -124,11 +127,13 @@ static evaluate_context_t *evaluate_context_create(void)
   if (ctx == NULL)
     return NULL;
 
-  if ((ctx->current_env = evaluate_env_create(NULL)) == NULL)
+  if ((ctx->global_env = evaluate_env_create(NULL, NULL)) == NULL)
   {
     free(ctx);
     return NULL;
   }
+
+  ctx->current_env = ctx->global_env;
 
   return ctx;
 }
@@ -139,7 +144,7 @@ static void evaluate_context_free(evaluate_context_t *ctx)
 
   while (env != NULL)
   {
-    next_env = env->parent;
+    next_env = env->prev;
     evaluate_env_free(env);
     env = next_env;
   }
@@ -147,9 +152,9 @@ static void evaluate_context_free(evaluate_context_t *ctx)
   free(ctx);
 }
 
-static void evaluate_context_enter_new_env(evaluate_context_t *ctx)
+static void evaluate_context_enter_new_env(evaluate_context_t *ctx, evaluate_env_t *parent)
 {
-  evaluate_env_t *new_env = evaluate_env_create(ctx->current_env);
+  evaluate_env_t *new_env = evaluate_env_create(parent, ctx->current_env);
   if (new_env == NULL)
     exit_out_of_memory();
 
@@ -158,12 +163,12 @@ static void evaluate_context_enter_new_env(evaluate_context_t *ctx)
 
 static void evaluate_context_exit_current_env(evaluate_context_t *ctx)
 {
-  if (ctx->current_env->parent == NULL)
+  if (ctx->current_env == ctx->global_env)
     exit_with_error("evaluate_context_exit_current_env(): cannot exit the global environment");
 
-  evaluate_env_t *parent_env = ctx->current_env->parent;
+  evaluate_env_t *prev_env = ctx->current_env->prev;
   evaluate_env_free(ctx->current_env);
-  ctx->current_env = parent_env;
+  ctx->current_env = prev_env;
 }
 
 /*
@@ -209,7 +214,7 @@ static evaluate_value_t call_function(evaluate_context_t *ctx, ast_node_t *funct
                        function_data.parameters->length,
                        arguments->length);
 
-  evaluate_context_enter_new_env(ctx);
+  evaluate_context_enter_new_env(ctx, ctx->global_env);
 
   for (int i = 0; i < arguments->length; i++)
   {
@@ -410,7 +415,7 @@ static evaluate_stmt_result_t evaluate_stmt_list(evaluate_context_t *ctx, ast_no
 {
   ast_node_t **stmts_arr = VECTOR_ARR(node->data_stmt_list.stmts, ast_node_t*);
 
-  evaluate_context_enter_new_env(ctx);
+  evaluate_context_enter_new_env(ctx, ctx->current_env);
   for (int i = 0; i < node->data_stmt_list.stmts->length; i++)
   {
     evaluate_stmt_result_t result;
