@@ -303,7 +303,10 @@ void tokenize(void)
         token->identifier = keyword_or_identifier;
       }
       else
+      {
+        free(keyword_or_identifier);
         token->type = keyword_type;
+      }
     }
     else if (is_digit(c))
     {
