@@ -1,4 +1,5 @@
 # Compiled artifacts
+build/
 *.o
 *.dSYM/
 yiche
