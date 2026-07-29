@@ -422,7 +422,7 @@ void tokens_print(void)
     if (token.type == TOKEN_IDENTIFIER)
       printf("identifier: %s\n", token.identifier);
     else if (token.type == TOKEN_CONSTANT)
-      printf("constant: %d\n", token.constant);
+      printf("constant: %d (%s)\n", token.constant, token.lexeme);
     else if (IS_KEYWORD(token))
       printf("keyword: %s\n", keyword_to_string(token.type));
     else // symbol
