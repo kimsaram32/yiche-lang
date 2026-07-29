@@ -3,7 +3,8 @@
 
 typedef struct
 {
-  unsigned char c; // 0 is used for marking EOF.
+  // 0 is used for marking EOF.
+  char c;
   int line, column;
 }
 input_char_t;
@@ -17,8 +18,8 @@ void input_init(void);
 // retrieving the full information.
 
 input_char_t input_get_last_char(void);
-unsigned char input_advance_char(void);
-unsigned char input_peek_char(int n);
+char input_advance_char(void);
+char input_peek_char(int n);
 
 // the buffer changes as input_advance_char() is called. return the
 // accumulated string and clear the buffer.

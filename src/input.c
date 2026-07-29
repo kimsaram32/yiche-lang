@@ -33,7 +33,7 @@ static void append_next_char_from_file(void)
   *next = file_next_char();
 }
 
-unsigned char input_advance_char(void)
+char input_advance_char(void)
 {
   if (input_next_index == input_buffer->length)
     append_next_char_from_file();
@@ -41,7 +41,7 @@ unsigned char input_advance_char(void)
   return VECTOR_ARR(input_buffer, input_char_t)[input_next_index++].c;
 }
 
-unsigned char input_peek_char(int n)
+char input_peek_char(int n)
 {
   if (n <= 0)
     exit_with_error("input_peek_char(): 'n' must be a positive integer");

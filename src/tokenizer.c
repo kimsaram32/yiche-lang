@@ -12,7 +12,8 @@ static VECTOR_T(token_t) *tokens = NULL;
 
 static void skip_multi_line_comment(void)
 {
-  int c, can_exit = 0;
+  char c;
+  int can_exit = 0;
 
   while ((c = input_advance_char()) != 0)
   {
@@ -142,8 +143,8 @@ static int get_symbol_2(char c1, char c2)
 // returns a symbol type.
 static token_type_t read_symbol(char c1)
 {
-  int type;
   char c2;
+  int type;
 
   if ((c2 = input_peek_char(1)) != 0)
   {
@@ -168,7 +169,8 @@ static int is_hexadecimal_digit(char c)
 
 static int read_numeric_constant(char initial)
 {
-  int val = 0, c;
+  char c;
+  int val = 0;
 
   if (initial >= '1' && initial <= '9')
   {
@@ -234,7 +236,8 @@ static int get_escape_character_value(char c)
 
 static int read_character_constant(void)
 {
-  int c = input_advance_char(), val;
+  char c = input_advance_char();
+  int val;
 
   if (c == '\'')
     exit_lexical_error("empty character constant '' not allowed");
@@ -259,7 +262,7 @@ void tokenize(void)
   if ((tokens = vector_create(sizeof(token_t), 64)) == NULL)
     exit_out_of_memory();
 
-  int c, c2;
+  char c, c2;
   while ((c = input_advance_char()) != 0)
   {
     if (is_whitespace(c))
