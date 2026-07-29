@@ -357,10 +357,12 @@ static evaluate_value_t evaluate_binary_expr(evaluate_context_t *ctx, ast_node_t
         break;
       case BINARY_OPERATOR_DIVISION:
         if (rhs_value == 0)
-          exit_runtime_error("cannot divide by zero");
+          exit_runtime_error("cannot perform division by zero");
         result.value_int = lhs_value / rhs_value;
         break;
       case BINARY_OPERATOR_MODULO:
+        if (rhs_value == 0)
+          exit_runtime_error("cannot perform modulo by zero");
         result.value_int = lhs_value % rhs_value;
         break;
       case BINARY_OPERATOR_LESS_THAN:
