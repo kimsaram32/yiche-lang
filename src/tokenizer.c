@@ -75,9 +75,9 @@ static char *read_keyword_or_identifier(char initial)
 }
 
 // returns a symbol token_type_t or -1.
-static int get_symbol_1(char sym)
+static int get_symbol_1(char c)
 {
-  switch (sym)
+  switch (c)
   {
     case '(':
       return TOKEN_SYMBOL_LPAREN;
@@ -120,45 +120,43 @@ static int get_symbol_1(char sym)
   }
 }
 
-// returns a symbol token type or -1.
-static int get_symbol_2(char *sym)
+// returns a symbol token_type_t or -1.
+static int get_symbol_2(char c1, char c2)
 {
-  if (!strcmp(sym, "=="))
+  if (c1 == '=' && c2 == '=')
     return TOKEN_SYMBOL_EQEQ;
-  else if (!strcmp(sym, "!="))
+  else if (c1 == '!' && c2 == '=')
     return TOKEN_SYMBOL_BANGEQ;
-  else if (!strcmp(sym, "<="))
+  else if (c1 == '<' && c2 == '=')
     return TOKEN_SYMBOL_LE;
-  else if (!strcmp(sym, ">="))
+  else if (c1 == '>' && c2 == '=')
     return TOKEN_SYMBOL_GE;
-  else if (!strcmp(sym, "&&"))
+  else if (c1 == '&' && c2 == '&')
     return TOKEN_SYMBOL_ANDAND;
-  else if (!strcmp(sym, "||"))
+  else if (c1 == '|' && c2 == '|')
     return TOKEN_SYMBOL_OROR;
   else
     return -1;
 }
 
 // returns a symbol type.
-static token_type_t read_symbol(char initial)
+static token_type_t read_symbol(char c1)
 {
   int type;
+  char c2;
 
-  if ((type = get_symbol_1(initial)) == -1)
-    exit_lexical_error("invalid symbol");
-
-  char *buf = calloc(3, sizeof(char));
-  buf[0] = initial;
-
-  if ((buf[1] = input_peek_char(1)) != 0)
+  if ((c2 = input_peek_char(1)) != 0)
   {
-    int t = get_symbol_2(buf);
-    if (t != -1)
+    type = get_symbol_2(c1, c2);
+    if (type != -1)
     {
       input_advance_char();
-      return t;
+      return type;
     }
   }
+
+  if ((type = get_symbol_1(c1)) == -1)
+    exit_lexical_error("invalid symbol");
 
   return type;
 }
