@@ -72,9 +72,13 @@ typedef struct
 }
 token_t;
 
-extern VECTOR_T(token_t) *tokens;
-
+// Initializes an array of tokens, reading characters from the standard input.
 void tokenize(void);
+
+// The remaining functions operate on the last array of tokens produced by
+// 'tokenize()', and must be used after calling it.
+
+void tokens_print(void);
 
 token_t *token_advance(void);
 token_t *token_peek_next(void);
