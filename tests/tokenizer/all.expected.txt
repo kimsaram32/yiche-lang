@@ -1,0 +1,49 @@
+symbol: :
+symbol: ;
+symbol: ,
+symbol: +
+symbol: -
+symbol: *
+symbol: /
+symbol: %
+symbol: <
+symbol: >
+symbol: <=
+symbol: >=
+symbol: ==
+symbol: !=
+symbol: &&
+symbol: ||
+symbol: !=
+symbol: (
+symbol: )
+symbol: {
+symbol: }
+keyword: fn
+keyword: if
+keyword: int
+keyword: return
+keyword: var
+keyword: while
+identifier: _
+identifier: a
+identifier: aa
+identifier: az
+identifier: a_z
+identifier: _a
+constant: 3 (3)
+identifier: a
+constant: 0 (0)
+constant: 12 (12)
+constant: 0 (0)
+constant: 12 (12)
+constant: 123 (123)
+constant: 0 (0x0)
+constant: 0 (0)
+identifier: xx
+constant: 0 (0x00)
+constant: 255 (0xff)
+constant: 97 ('a')
+constant: 39 ('\'')
+constant: 92 ('\\')
+constant: 10 ('\n')

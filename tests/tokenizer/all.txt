@@ -1,0 +1,9 @@
+/*
+multi-line comment
+*/
+// single-line comment
+:;,+-*/%<><=>===!=&&||!=(){}
+fn if int return var while
+_ a aa az a_z _a 3a
+0 12 012 123 0x0 0xx 0x00 0xff
+'a' '\'' '\\' '\n'
