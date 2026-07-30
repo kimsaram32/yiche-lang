@@ -1,9 +1,19 @@
-var global: int;
+var g1: int;
+var g2: int = 5;
+var g3: int = 3 + 5;
 
-var global_with_init: int = 5;
+fn f1(): int {
+}
 
-fn f(): int {
-  ;
+fn f2(var a: int): int {
+}
+
+fn f3(var a: int, var b: int): int {
+}
+
+fn main(): int {
+  ;;;
+  2;
   if (1);
 
   if (1) {
@@ -21,11 +31,9 @@ fn f(): int {
     }
   }
 
-  return 2;
-}
-
-fn main(): int {
-  var b: int = 3;
+  var l2: int;
+  var l1: int = 5;
+  var l3: int = 3 + 5;
 
   return 0;
 }

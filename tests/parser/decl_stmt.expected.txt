@@ -1,23 +1,83 @@
 program {
-  decls[4] = {
+  decls[7] = {
     variable_decl {
-      identifier = global
+      identifier = g1
       data_type = int
     }
     variable_decl {
-      identifier = global_with_init
+      identifier = g2
       data_type = int
       initializer = primitive_expr {
         constant = 5
       }
     }
+    variable_decl {
+      identifier = g3
+      data_type = int
+      initializer = binary_expr {
+        operator = +
+        left = primitive_expr {
+          constant = 3
+        }
+        right = primitive_expr {
+          constant = 5
+        }
+      }
+    }
     function_decl {
-      identifier = f
+      identifier = f1
       return_data_type = int
       parameters[0] = {
       }
       body = stmt_list {
-        stmts[5] = {
+        stmts[0] = {
+        }
+      }
+    }
+    function_decl {
+      identifier = f2
+      return_data_type = int
+      parameters[1] = {
+        variable_decl {
+          identifier = a
+          data_type = int
+        }
+      }
+      body = stmt_list {
+        stmts[0] = {
+        }
+      }
+    }
+    function_decl {
+      identifier = f3
+      return_data_type = int
+      parameters[2] = {
+        variable_decl {
+          identifier = a
+          data_type = int
+        }
+        variable_decl {
+          identifier = b
+          data_type = int
+        }
+      }
+      body = stmt_list {
+        stmts[0] = {
+        }
+      }
+    }
+    function_decl {
+      identifier = main
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[9] = {
+          expr_stmt {
+            expr = primitive_expr {
+              constant = 2
+            }
+          }
           if_stmt {
             expr = primitive_expr {
               constant = 1
@@ -79,26 +139,28 @@ program {
               }
             }
           }
-          return_stmt {
-            expr = primitive_expr {
-              constant = 2
-            }
-          }
-        }
-      }
-    }
-    function_decl {
-      identifier = main
-      return_data_type = int
-      parameters[0] = {
-      }
-      body = stmt_list {
-        stmts[2] = {
           variable_decl {
-            identifier = b
+            identifier = l2
+            data_type = int
+          }
+          variable_decl {
+            identifier = l1
             data_type = int
             initializer = primitive_expr {
-              constant = 3
+              constant = 5
+            }
+          }
+          variable_decl {
+            identifier = l3
+            data_type = int
+            initializer = binary_expr {
+              operator = +
+              left = primitive_expr {
+                constant = 3
+              }
+              right = primitive_expr {
+                constant = 5
+              }
             }
           }
           return_stmt {
