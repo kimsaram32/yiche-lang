@@ -1,0 +1,31 @@
+var global: int;
+
+var global_with_init: int = 5;
+
+fn f(): int {
+  ;
+  if (1);
+
+  if (1) {
+    ;
+  }
+
+  while (1);
+
+  while (1) {
+    ;
+    while (1) {
+      if (1) {
+        var a: int = 7;
+      }
+    }
+  }
+
+  return 2;
+}
+
+fn main(): int {
+  var b: int = 3;
+
+  return 0;
+}

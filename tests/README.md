@@ -1,19 +1,26 @@
 # Testing
 
-Currently, golden tests are being done by comparing outputs of the tokenizer
-and the parser.
+Golden tests are done by comparing outputs of the components.
+
+Currently, the component types are `tokenizer` and `parser`.
 
 ## Adding a new test case
 
-Create an input file in `[TYPE]/[TEST_CASE_NAME].txt`.
+1. Create an input file.
 
-- `TYPE` is one of `tokenizer` and `parser`.
-- `TEST_CASE_NAME` should only consist of lowercase letters and underscores.
+The file path depends on the component type.
 
-Then run:
+- For `tokenizer`: `tokenizer/[TEST_CASE_NAME].txt`
+- For `parser`: `parser/[TEST_CASE_NAME].yiche`
+
+`TEST_CASE_NAME` should only consist of lowercase letters and underscores.
+
+2. Generate the output file.
+
+The executables for the running the test cases must have been built via CMake.
 
 ``` shell
-$ ./generate_test.bash [path to the CMake build directory] [TYPE] [TEST_CASE_NAME]
+$ ./[TYPE]_generate_output.bash [path to the CMake build directory] [path to the input file]
 ```
 
 This generates an output file in `[TYPE]/[TEST_CASE_NAME].expected.txt`.

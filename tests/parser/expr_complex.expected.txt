@@ -1,0 +1,576 @@
+program {
+  decls[1] = {
+    function_decl {
+      identifier = main
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[4] = {
+          expr_stmt {
+            expr = binary_expr {
+              operator = =
+              left = primitive_expr {
+                identifier = result
+              }
+              right = binary_expr {
+                operator = ||
+                left = binary_expr {
+                  operator = ||
+                  left = binary_expr {
+                    operator = ||
+                    left = binary_expr {
+                      operator = ||
+                      left = binary_expr {
+                        operator = ==
+                        left = function_call_expr {
+                          callee = foo
+                          arguments[4] = {
+                            binary_expr {
+                              operator = =
+                              left = primitive_expr {
+                                identifier = a
+                              }
+                              right = binary_expr {
+                                operator = +
+                                left = primitive_expr {
+                                  identifier = b
+                                }
+                                right = binary_expr {
+                                  operator = *
+                                  left = primitive_expr {
+                                    identifier = c
+                                  }
+                                  right = primitive_expr {
+                                    identifier = d
+                                  }
+                                }
+                              }
+                            }
+                            unary_expr {
+                              operator = !
+                              operand = primitive_expr {
+                                identifier = e
+                              }
+                            }
+                            function_call_expr {
+                              callee = f
+                              arguments[1] = {
+                                function_call_expr {
+                                  callee = g
+                                  arguments[1] = {
+                                    function_call_expr {
+                                      callee = h
+                                      arguments[1] = {
+                                        primitive_expr {
+                                          identifier = i
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                            binary_expr {
+                              operator = +
+                              left = binary_expr {
+                                operator = %
+                                left = primitive_expr {
+                                  identifier = j
+                                }
+                                right = primitive_expr {
+                                  identifier = k
+                                }
+                              }
+                              right = binary_expr {
+                                operator = *
+                                left = primitive_expr {
+                                  identifier = l
+                                }
+                                right = primitive_expr {
+                                  identifier = m
+                                }
+                              }
+                            }
+                          }
+                        }
+                        right = primitive_expr {
+                          identifier = n
+                        }
+                      }
+                      right = binary_expr {
+                        operator = &&
+                        left = binary_expr {
+                          operator = <
+                          left = primitive_expr {
+                            identifier = p
+                          }
+                          right = primitive_expr {
+                            identifier = q
+                          }
+                        }
+                        right = binary_expr {
+                          operator = !=
+                          left = primitive_expr {
+                            identifier = r
+                          }
+                          right = primitive_expr {
+                            identifier = s
+                          }
+                        }
+                      }
+                    }
+                    right = binary_expr {
+                      operator = &&
+                      left = binary_expr {
+                        operator = >=
+                        left = primitive_expr {
+                          identifier = t
+                        }
+                        right = primitive_expr {
+                          identifier = u
+                        }
+                      }
+                      right = binary_expr {
+                        operator = <=
+                        left = primitive_expr {
+                          identifier = v
+                        }
+                        right = primitive_expr {
+                          identifier = w
+                        }
+                      }
+                    }
+                  }
+                  right = binary_expr {
+                    operator = &&
+                    left = binary_expr {
+                      operator = <
+                      left = binary_expr {
+                        operator = -
+                        left = binary_expr {
+                          operator = +
+                          left = binary_expr {
+                            operator = -
+                            left = binary_expr {
+                              operator = -
+                              left = primitive_expr {
+                                identifier = x
+                              }
+                              right = primitive_expr {
+                                identifier = y
+                              }
+                            }
+                            right = primitive_expr {
+                              identifier = z
+                            }
+                          }
+                          right = binary_expr {
+                            operator = /
+                            left = binary_expr {
+                              operator = *
+                              left = primitive_expr {
+                                identifier = aa
+                              }
+                              right = primitive_expr {
+                                identifier = bb
+                              }
+                            }
+                            right = primitive_expr {
+                              identifier = cc
+                            }
+                          }
+                        }
+                        right = binary_expr {
+                          operator = %
+                          left = primitive_expr {
+                            identifier = dd
+                          }
+                          right = primitive_expr {
+                            identifier = ee
+                          }
+                        }
+                      }
+                      right = primitive_expr {
+                        identifier = ff
+                      }
+                    }
+                    right = binary_expr {
+                      operator = ==
+                      left = primitive_expr {
+                        identifier = gg
+                      }
+                      right = primitive_expr {
+                        identifier = hh
+                      }
+                    }
+                  }
+                }
+                right = binary_expr {
+                  operator = &&
+                  left = unary_expr {
+                    operator = !
+                    operand = primitive_expr {
+                      identifier = ii
+                    }
+                  }
+                  right = binary_expr {
+                    operator = !=
+                    left = function_call_expr {
+                      callee = jj
+                      arguments[3] = {
+                        primitive_expr {
+                          identifier = kk
+                        }
+                        binary_expr {
+                          operator = =
+                          left = primitive_expr {
+                            identifier = ll
+                          }
+                          right = primitive_expr {
+                            identifier = mm
+                          }
+                        }
+                        binary_expr {
+                          operator = +
+                          left = primitive_expr {
+                            identifier = nn
+                          }
+                          right = binary_expr {
+                            operator = *
+                            left = primitive_expr {
+                              identifier = oo
+                            }
+                            right = primitive_expr {
+                              identifier = pp
+                            }
+                          }
+                        }
+                      }
+                    }
+                    right = primitive_expr {
+                      identifier = qq
+                    }
+                  }
+                }
+              }
+            }
+          }
+          expr_stmt {
+            expr = binary_expr {
+              operator = =
+              left = primitive_expr {
+                identifier = result
+              }
+              right = function_call_expr {
+                callee = foo
+                arguments[3] = {
+                  binary_expr {
+                    operator = =
+                    left = primitive_expr {
+                      identifier = a
+                    }
+                    right = binary_expr {
+                      operator = +
+                      left = primitive_expr {
+                        identifier = b
+                      }
+                      right = binary_expr {
+                        operator = *
+                        left = primitive_expr {
+                          identifier = c
+                        }
+                        right = primitive_expr {
+                          identifier = d
+                        }
+                      }
+                    }
+                  }
+                  unary_expr {
+                    operator = !
+                    operand = primitive_expr {
+                      identifier = e
+                    }
+                  }
+                  function_call_expr {
+                    callee = f
+                    arguments[1] = {
+                      function_call_expr {
+                        callee = g
+                        arguments[1] = {
+                          function_call_expr {
+                            callee = h
+                            arguments[1] = {
+                              primitive_expr {
+                                identifier = i
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          expr_stmt {
+            expr = binary_expr {
+              operator = =
+              left = primitive_expr {
+                identifier = a
+              }
+              right = binary_expr {
+                operator = =
+                left = primitive_expr {
+                  identifier = b
+                }
+                right = binary_expr {
+                  operator = =
+                  left = primitive_expr {
+                    identifier = c
+                  }
+                  right = binary_expr {
+                    operator = ||
+                    left = binary_expr {
+                      operator = &&
+                      left = binary_expr {
+                        operator = <
+                        left = function_call_expr {
+                          callee = foo
+                          arguments[4] = {
+                            binary_expr {
+                              operator = +
+                              left = primitive_expr {
+                                identifier = x
+                              }
+                              right = binary_expr {
+                                operator = *
+                                left = primitive_expr {
+                                  identifier = y
+                                }
+                                right = primitive_expr {
+                                  identifier = z
+                                }
+                              }
+                            }
+                            unary_expr {
+                              operator = !
+                              operand = binary_expr {
+                                operator = ||
+                                left = binary_expr {
+                                  operator = ==
+                                  left = primitive_expr {
+                                    identifier = aa
+                                  }
+                                  right = primitive_expr {
+                                    identifier = bb
+                                  }
+                                }
+                                right = binary_expr {
+                                  operator = !=
+                                  left = primitive_expr {
+                                    identifier = cc
+                                  }
+                                  right = primitive_expr {
+                                    identifier = dd
+                                  }
+                                }
+                              }
+                            }
+                            function_call_expr {
+                              callee = bar
+                              arguments[2] = {
+                                function_call_expr {
+                                  callee = baz
+                                  arguments[2] = {
+                                    primitive_expr {
+                                      constant = 1
+                                    }
+                                    primitive_expr {
+                                      constant = 2
+                                    }
+                                  }
+                                }
+                                function_call_expr {
+                                  callee = qux
+                                  arguments[1] = {
+                                    primitive_expr {
+                                      identifier = quux
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                            binary_expr {
+                              operator = =
+                              left = primitive_expr {
+                                identifier = e
+                              }
+                              right = binary_expr {
+                                operator = =
+                                left = primitive_expr {
+                                  identifier = f
+                                }
+                                right = binary_expr {
+                                  operator = +
+                                  left = primitive_expr {
+                                    identifier = g
+                                  }
+                                  right = binary_expr {
+                                    operator = %
+                                    left = binary_expr {
+                                      operator = /
+                                      left = binary_expr {
+                                        operator = *
+                                        left = primitive_expr {
+                                          identifier = h
+                                        }
+                                        right = primitive_expr {
+                                          identifier = i
+                                        }
+                                      }
+                                      right = primitive_expr {
+                                        identifier = j
+                                      }
+                                    }
+                                    right = primitive_expr {
+                                      identifier = k
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                        right = primitive_expr {
+                          identifier = l
+                        }
+                      }
+                      right = binary_expr {
+                        operator = >=
+                        left = primitive_expr {
+                          identifier = m
+                        }
+                        right = primitive_expr {
+                          identifier = n
+                        }
+                      }
+                    }
+                    right = binary_expr {
+                      operator = &&
+                      left = binary_expr {
+                        operator = ==
+                        left = primitive_expr {
+                          identifier = o
+                        }
+                        right = primitive_expr {
+                          identifier = p
+                        }
+                      }
+                      right = binary_expr {
+                        operator = !=
+                        left = unary_expr {
+                          operator = !
+                          operand = function_call_expr {
+                            callee = q
+                            arguments[2] = {
+                              primitive_expr {
+                                identifier = r
+                              }
+                              binary_expr {
+                                operator = =
+                                left = primitive_expr {
+                                  identifier = s
+                                }
+                                right = binary_expr {
+                                  operator = +
+                                  left = primitive_expr {
+                                    identifier = t
+                                  }
+                                  right = primitive_expr {
+                                    identifier = u
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                        right = primitive_expr {
+                          identifier = v
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          expr_stmt {
+            expr = binary_expr {
+              operator = =
+              left = primitive_expr {
+                identifier = a
+              }
+              right = binary_expr {
+                operator = &&
+                left = function_call_expr {
+                  callee = x
+                  arguments[2] = {
+                    binary_expr {
+                      operator = ==
+                      left = binary_expr {
+                        operator = +
+                        left = function_call_expr {
+                          callee = foo
+                          arguments[1] = {
+                            primitive_expr {
+                              identifier = b
+                            }
+                          }
+                        }
+                        right = binary_expr {
+                          operator = *
+                          left = binary_expr {
+                            operator = +
+                            left = primitive_expr {
+                              identifier = c
+                            }
+                            right = primitive_expr {
+                              identifier = d
+                            }
+                          }
+                          right = binary_expr {
+                            operator = -
+                            left = primitive_expr {
+                              identifier = e
+                            }
+                            right = primitive_expr {
+                              identifier = f
+                            }
+                          }
+                        }
+                      }
+                      right = primitive_expr {
+                        identifier = g
+                      }
+                    }
+                    primitive_expr {
+                      identifier = a
+                    }
+                  }
+                }
+                right = unary_expr {
+                  operator = !
+                  operand = primitive_expr {
+                    identifier = h
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

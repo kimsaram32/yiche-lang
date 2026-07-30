@@ -1,6 +1,9 @@
 add_executable(print_tokens "print_tokens.c")
 target_link_libraries(print_tokens PRIVATE yiche)
 
+add_executable(print_ast "print_ast.c")
+target_link_libraries(print_ast PRIVATE yiche)
+
 find_program(BASH_PROGRAM bash REQUIRED)
 
 add_test(

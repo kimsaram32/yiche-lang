@@ -24,8 +24,9 @@ failed=0
 run_tests () {
     local type=$1
     local bin_print=$2
+    local input_ext=$3
 
-    for file_input in ./${type}/*([a-z]|_).txt; do
+    for file_input in ./${type}/*([a-z]|_).${input_ext}; do
         ((total++))
 
         local file_output=$(get_output_file_path ${file_input})
@@ -45,8 +46,8 @@ run_tests () {
     done
 }
 
-run_tests tokenizer $BIN_PRINT_TOKENS
-run_tests parser $BIN_PRINT_AST
+run_tests tokenizer $BIN_PRINT_TOKENS txt
+run_tests parser $BIN_PRINT_AST yiche
 
 succeeded=$(( total - failed ))
 

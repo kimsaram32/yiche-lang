@@ -1,0 +1,113 @@
+program {
+  decls[4] = {
+    variable_decl {
+      identifier = global
+      data_type = int
+    }
+    variable_decl {
+      identifier = global_with_init
+      data_type = int
+      initializer = primitive_expr {
+        constant = 5
+      }
+    }
+    function_decl {
+      identifier = f
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[5] = {
+          if_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          if_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          while_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          while_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[1] = {
+                while_stmt {
+                  expr = primitive_expr {
+                    constant = 1
+                  }
+                  stmt_list = stmt_list {
+                    stmts[1] = {
+                      if_stmt {
+                        expr = primitive_expr {
+                          constant = 1
+                        }
+                        stmt_list = stmt_list {
+                          stmts[1] = {
+                            variable_decl {
+                              identifier = a
+                              data_type = int
+                              initializer = primitive_expr {
+                                constant = 7
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          return_stmt {
+            expr = primitive_expr {
+              constant = 2
+            }
+          }
+        }
+      }
+    }
+    function_decl {
+      identifier = main
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[2] = {
+          variable_decl {
+            identifier = b
+            data_type = int
+            initializer = primitive_expr {
+              constant = 3
+            }
+          }
+          return_stmt {
+            expr = primitive_expr {
+              constant = 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
