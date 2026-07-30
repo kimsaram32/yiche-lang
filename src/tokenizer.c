@@ -448,12 +448,15 @@ token_t *token_advance(void)
   return &tokens_arr[token_next_pos++];
 }
 
-token_t *token_peek_next(void)
+token_t *token_peek(int n)
 {
+  if (n <= 0)
+    exit_with_error("token_peek(): n must be a positive integer");
+
   token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
-  if (token_next_pos == tokens->length)
+  if (token_next_pos + n - 1 >= tokens->length)
     return NULL;
-  return &tokens_arr[token_next_pos];
+  return &tokens_arr[token_next_pos + n - 1];
 }
 
 void token_unget(void)
@@ -463,14 +466,13 @@ void token_unget(void)
   token_next_pos--;
 }
 
-token_t *token_advance_and_assert(int n, ...)
+static token_t *token_assertn(int n, token_t *token, ...)
 {
   va_list types;
-  token_t *token = token_advance();
   if (token == NULL)
     exit_parsing_error_no_tokens();
 
-  for (va_start(types, n); n--;)
+  for (va_start(types, token); n--;)
   {
     if (token->type == va_arg(types, token_type_t))
     {
@@ -483,22 +485,65 @@ token_t *token_advance_and_assert(int n, ...)
   exit_parsing_error_unexpected_token(token);
 }
 
-token_t *token_try_advancing(int n, ...)
+token_t *token_assert(token_t *token, token_type_t t1)
+{
+  return token_assertn(1, token, t1);
+}
+
+token_t *token_assert2(token_t *token, token_type_t t1, token_type_t t2)
+{
+  return token_assertn(2, token, t1, t2);
+}
+
+token_t *token_assert3(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3)
+{
+  return token_assertn(3, token, t1, t2, t3);
+}
+
+token_t *token_assert4(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3, token_type_t t4)
+{
+  return token_assertn(4, token, t1, t2, t3, t4);
+}
+
+static token_t *token_checkn(int n, token_t *token, ...)
 {
   va_list types;
-  token_t *token = token_peek_next();
   if (token == NULL)
     return NULL;
 
-  for (va_start(types, n); n--;)
+  for (va_start(types, token); n--;)
   {
     if (token->type == va_arg(types, token_type_t))
     {
       va_end(types);
-      return token_advance();
+      return token;
     }
   }
 
   va_end(types);
   return NULL;
+}
+
+token_t *token_check(token_t *token, token_type_t t1)
+{
+  return token_checkn(1, token, t1);
+}
+
+token_t *token_check2(token_t *token, token_type_t t1, token_type_t t2)
+{
+  return token_checkn(2, token, t1, t2);
+}
+
+token_t *token_check3(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3)
+{
+  return token_checkn(3, token, t1, t2, t3);
+}
+
+token_t *token_check4(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3, token_type_t t4)
+{
+  return token_checkn(4, token, t1, t2, t3, t4);
 }

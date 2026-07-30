@@ -81,11 +81,27 @@ void tokenize(void);
 void tokens_print(void);
 
 token_t *token_advance(void);
-token_t *token_peek_next(void);
+token_t *token_peek(int n);
 void token_unget(void);
 
-// Convenience functions
-token_t *token_advance_and_assert(int n, ...);
-token_t *token_try_advancing(int n, ...);
+// If 'token' is non-NULL and matches one of the type(s), return the token.
+// Otherwise, throw an error.
+
+token_t *token_assert(token_t *token, token_type_t t1);
+token_t *token_assert2(token_t *token, token_type_t t1, token_type_t t2);
+token_t *token_assert3(token_t *token, token_type_t t1, token_type_t t2,
+                       token_type_t t3);
+token_t *token_assert4(token_t *token, token_type_t t1, token_type_t t2,
+                       token_type_t t3, token_type_t t4);
+
+// If 'token' is non-NULL and matches one of the type(s), return the token.
+// otherwise, return NULL.
+
+token_t *token_check(token_t *token, token_type_t t1);
+token_t *token_check2(token_t *token, token_type_t t1, token_type_t t2);
+token_t *token_check3(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3);
+token_t *token_check4(token_t *token, token_type_t t1, token_type_t t2,
+                      token_type_t t3, token_type_t t4);
 
 #endif

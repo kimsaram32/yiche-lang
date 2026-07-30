@@ -39,14 +39,14 @@ static ast_node_t *parse_expr(void)
 
 static ast_node_t *parse_primitive_expr(void)
 {
-  token_t *token = token_advance_and_assert(3, TOKEN_IDENTIFIER, TOKEN_CONSTANT,
-                                            TOKEN_SYMBOL_LPAREN);
+  token_t *token = token_assert3(token_advance(), TOKEN_IDENTIFIER, TOKEN_CONSTANT,
+                                 TOKEN_SYMBOL_LPAREN);
   ast_node_t *node;
 
   if (token->type == TOKEN_SYMBOL_LPAREN)
   {
     node = parse_expr();
-    token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+    token_assert(token_advance(), TOKEN_SYMBOL_RPAREN);
     return node;
   }
 
@@ -56,20 +56,17 @@ static ast_node_t *parse_primitive_expr(void)
 
 static ast_node_t *parse_function_call_expr(void)
 {
-  token_t *token_callee = token_try_advancing(1, TOKEN_IDENTIFIER);
-  if (token_callee == NULL)
+  token_t *token_callee = token_peek(1), *next;
+  if (token_check(token_callee, TOKEN_IDENTIFIER) == NULL ||
+      token_check(token_peek(2), TOKEN_SYMBOL_LPAREN) == NULL)
     return parse_primitive_expr();
 
-  if (token_try_advancing(1, TOKEN_SYMBOL_LPAREN) == NULL)
-  {
-    token_unget();
-    return parse_primitive_expr();
-  }
+  token_advance();
+  token_advance();
 
   ast_node_t *node = ast_node_function_call_expr_create(token_callee);
 
-  token_t *next = token_peek_next();
-  if (next == NULL)
+  if ((next = token_peek(1)) == NULL)
     exit_parsing_error_no_tokens();
 
   if (next->type == TOKEN_SYMBOL_RPAREN)
@@ -78,7 +75,7 @@ static ast_node_t *parse_function_call_expr(void)
   {
     do
       ast_node_function_call_expr_append_argument(node, parse_expr());
-    while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
+    while (token_assert2(token_advance(), TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
            == TOKEN_SYMBOL_COMMA);
   }
 
@@ -115,8 +112,9 @@ static ast_node_t *parse_prefix_expr(void)
 
   token_t *token_operator;
 
-  while ((token_operator = token_try_advancing(1, TOKEN_SYMBOL_BANG)) != NULL)
+  while ((token_operator = token_check(token_peek(1), TOKEN_SYMBOL_BANG)) != NULL)
   {
+    token_advance();
     unary_operator_t operator;
     switch (token_operator->type)
     {
@@ -181,13 +179,14 @@ static binary_operator_t get_binary_operator(token_type_t symbol_type)
 // Left-recursive binary expressions are handled as right-recursive, e.g.,
 // <multiplicative_expression> ::= <prefix_expression> [ ( "*" | "/" | "%" ) <multiplicative_expression> ]
 
-#define DEFINE_BINARY_EXPR_PARSE_FUNCTION(func, prev, types_n, ...) \
+#define DEFINE_BINARY_EXPR_PARSE_FUNCTION(func, prev, check_fn, ...) \
 static ast_node_t *func(void) \
 { \
   ast_node_t *root = prev(); \
   token_t *token_operator; \
-  while ((token_operator = token_try_advancing(types_n, __VA_ARGS__)) != NULL) \
+  while ((token_operator = check_fn(token_peek(1), __VA_ARGS__)) != NULL) \
   { \
+    token_advance(); \
     ast_node_t *right_operand = prev(); \
     binary_operator_t operator = get_binary_operator(token_operator->type); \
     root = ast_node_binary_expr_create(operator, root, right_operand); \
@@ -195,23 +194,23 @@ static ast_node_t *func(void) \
   return root; \
 }
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_multiplicative_expr, parse_prefix_expr, 3,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_multiplicative_expr, parse_prefix_expr, token_check3,
                                   TOKEN_SYMBOL_ASTERISK, TOKEN_SYMBOL_SLASH, TOKEN_SYMBOL_PERCENT)
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_additive_expr, parse_multiplicative_expr, 2,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_additive_expr, parse_multiplicative_expr, token_check2,
                                   TOKEN_SYMBOL_PLUS, TOKEN_SYMBOL_MINUS)
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_comparison_expr, parse_additive_expr, 4,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_comparison_expr, parse_additive_expr, token_check4,
                                   TOKEN_SYMBOL_LT, TOKEN_SYMBOL_GT, TOKEN_SYMBOL_LE,
                                   TOKEN_SYMBOL_GE)
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_equality_expr, parse_comparison_expr, 2,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_equality_expr, parse_comparison_expr, token_check2,
                                   TOKEN_SYMBOL_EQEQ, TOKEN_SYMBOL_BANGEQ)
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_and_expr, parse_equality_expr, 1,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_and_expr, parse_equality_expr, token_check,
                                   TOKEN_SYMBOL_ANDAND)
 
-DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_or_expr, parse_logical_and_expr, 1,
+DEFINE_BINARY_EXPR_PARSE_FUNCTION(parse_logical_or_expr, parse_logical_and_expr, token_check,
                                   TOKEN_SYMBOL_OROR)
 
 static ast_node_t *parse_assignment_expr(void)
@@ -220,15 +219,15 @@ static ast_node_t *parse_assignment_expr(void)
 
   while (1)
   {
-    token_t *token_identifier = token_try_advancing(1, TOKEN_IDENTIFIER);
+    token_t *token_identifier = token_check(token_peek(1), TOKEN_IDENTIFIER);
     if (token_identifier == NULL)
       break;
 
-    if (token_try_advancing(1, TOKEN_SYMBOL_EQ) == NULL)
-    {
-      token_unget();
+    if (token_check(token_peek(2), TOKEN_SYMBOL_EQ) == NULL)
       break;
-    }
+
+    token_advance();
+    token_advance();
 
     ast_node_t *identifier_node = ast_node_primitive_expr_create(token_identifier);
     *node_p = ast_node_binary_expr_create(BINARY_OPERATOR_ASSIGNMENT, identifier_node, NULL);
@@ -248,11 +247,11 @@ static ast_node_t *parse_assignment_expr(void)
 static ast_node_t *parse_stmt_list(void)
 {
   token_t *token;
-  token_advance_and_assert(1, TOKEN_SYMBOL_LBRACE);
+  token_assert(token_advance(), TOKEN_SYMBOL_LBRACE);
 
   ast_node_t *node = ast_node_stmt_list_create();
 
-  while ((token = token_peek_next()) != NULL && token->type != TOKEN_SYMBOL_RBRACE)
+  while ((token = token_peek(1)) != NULL && token->type != TOKEN_SYMBOL_RBRACE)
   {
     switch (token->type)
     {
@@ -288,7 +287,7 @@ static ast_node_t *parse_stmt_list(void)
 static ast_node_t *parse_expr_stmt(void)
 {
   ast_node_t *node_expr = parse_expr();
-  token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+  token_assert(token_advance(), TOKEN_SYMBOL_SEMICOLON);
   return ast_node_expr_stmt_create(node_expr);
 }
 
@@ -296,20 +295,20 @@ static ast_node_t *parse_if_stmt(void)
 {
   ast_node_t *node_expr, *node_stmt_list;
 
-  token_advance_and_assert(1, TOKEN_KEYWORD_IF);
+  token_assert(token_advance(), TOKEN_KEYWORD_IF);
 
-  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+  token_assert(token_advance(), TOKEN_SYMBOL_LPAREN);
   node_expr = parse_expr();
-  token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+  token_assert(token_advance(), TOKEN_SYMBOL_RPAREN);
 
-  token_t *token = token_advance_and_assert(2, TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
+  token_t *token = token_assert2(token_peek(1), TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
   if (token->type == TOKEN_SYMBOL_LBRACE)
-  {
-    token_unget();
     node_stmt_list = parse_stmt_list();
-  }
   else
+  {
+    token_advance();
     node_stmt_list = ast_node_stmt_list_create();
+  }
 
   return ast_node_if_stmt_create(node_expr, node_stmt_list);
 }
@@ -318,29 +317,29 @@ static ast_node_t *parse_while_stmt(void)
 {
   ast_node_t *node_expr, *node_stmt_list;
 
-  token_advance_and_assert(1, TOKEN_KEYWORD_WHILE);
+  token_assert(token_advance(), TOKEN_KEYWORD_WHILE);
 
-  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+  token_assert(token_advance(), TOKEN_SYMBOL_LPAREN);
   node_expr = parse_expr();
-  token_advance_and_assert(1, TOKEN_SYMBOL_RPAREN);
+  token_assert(token_advance(), TOKEN_SYMBOL_RPAREN);
 
-  token_t *token = token_advance_and_assert(2, TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
+  token_t *token = token_assert2(token_peek(1), TOKEN_SYMBOL_LBRACE, TOKEN_SYMBOL_SEMICOLON);
   if (token->type == TOKEN_SYMBOL_LBRACE)
-  {
-    token_unget();
     node_stmt_list = parse_stmt_list();
-  }
   else
+  {
+    token_advance();
     node_stmt_list = ast_node_stmt_list_create();
+  }
 
   return ast_node_while_stmt_create(node_expr, node_stmt_list);
 }
 
 static ast_node_t *parse_return_stmt(void)
 {
-  token_advance_and_assert(1, TOKEN_KEYWORD_RETURN);
+  token_assert(token_advance(), TOKEN_KEYWORD_RETURN);
   ast_node_t *node_expr = parse_expr();
-  token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+  token_assert(token_advance(), TOKEN_SYMBOL_SEMICOLON);
 
   return ast_node_return_stmt_create(node_expr);
 }
@@ -351,7 +350,7 @@ static ast_node_t *parse_return_stmt(void)
 
 static data_type_t parse_data_type(void)
 {
-  token_t *token = token_advance_and_assert(1, TOKEN_KEYWORD_INT);
+  token_t *token = token_assert(token_advance(), TOKEN_KEYWORD_INT);
 
   switch (token->type)
   {
@@ -364,18 +363,18 @@ static data_type_t parse_data_type(void)
 
 static ast_node_t *parse_variable_decl(void)
 {
-  token_advance_and_assert(1, TOKEN_KEYWORD_VAR);
-  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
-  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+  token_assert(token_advance(), TOKEN_KEYWORD_VAR);
+  token_t *token_identifier = token_assert(token_advance(), TOKEN_IDENTIFIER);
+  token_assert(token_advance(), TOKEN_SYMBOL_COLON);
   data_type_t data_type = parse_data_type();
 
   ast_node_t *node_initializer = NULL;
 
-  if (token_advance_and_assert(2, TOKEN_SYMBOL_SEMICOLON, TOKEN_SYMBOL_EQ)->type
+  if (token_assert2(token_advance(), TOKEN_SYMBOL_SEMICOLON, TOKEN_SYMBOL_EQ)->type
       == TOKEN_SYMBOL_EQ)
   {
     node_initializer = parse_expr();
-    token_advance_and_assert(1, TOKEN_SYMBOL_SEMICOLON);
+    token_assert(token_advance(), TOKEN_SYMBOL_SEMICOLON);
   }
 
   return ast_node_variable_decl_create(token_identifier, data_type, node_initializer);
@@ -383,9 +382,9 @@ static ast_node_t *parse_variable_decl(void)
 
 static ast_node_t *parse_function_parameter(void)
 {
-  token_advance_and_assert(1, TOKEN_KEYWORD_VAR);
-  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
-  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+  token_assert(token_advance(), TOKEN_KEYWORD_VAR);
+  token_t *token_identifier = token_assert(token_advance(), TOKEN_IDENTIFIER);
+  token_assert(token_advance(), TOKEN_SYMBOL_COLON);
   data_type_t data_type = parse_data_type();
 
   return ast_node_variable_decl_create(token_identifier, data_type, NULL);
@@ -393,21 +392,23 @@ static ast_node_t *parse_function_parameter(void)
 
 static ast_node_t *parse_function_decl(void)
 {
-  token_advance_and_assert(1, TOKEN_KEYWORD_FN);
-  token_t *token_identifier = token_advance_and_assert(1, TOKEN_IDENTIFIER);
-  token_advance_and_assert(1, TOKEN_SYMBOL_LPAREN);
+  token_assert(token_advance(), TOKEN_KEYWORD_FN);
+  token_t *token_identifier = token_assert(token_advance(), TOKEN_IDENTIFIER);
+  token_assert(token_advance(), TOKEN_SYMBOL_LPAREN);
 
   ast_node_t *node = ast_node_function_decl_create(token_identifier);
 
-  if (token_try_advancing(1, TOKEN_SYMBOL_RPAREN) == NULL)
+  if (token_check(token_peek(1), TOKEN_SYMBOL_RPAREN) == NULL)
   {
     do
       ast_node_function_decl_append_parameter(node, parse_function_parameter());
-    while (token_advance_and_assert(2, TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
+    while (token_assert2(token_advance(), TOKEN_SYMBOL_COMMA, TOKEN_SYMBOL_RPAREN)->type
            == TOKEN_SYMBOL_COMMA);
   }
+  else
+    token_advance();
 
-  token_advance_and_assert(1, TOKEN_SYMBOL_COLON);
+  token_assert(token_advance(), TOKEN_SYMBOL_COLON);
 
   node->data_function_decl.return_data_type = parse_data_type();
   node->data_function_decl.body = parse_stmt_list();
@@ -424,7 +425,7 @@ ast_node_t *parse(void)
   ast_node_t *node = ast_node_program_create();
   token_t *token;
 
-  while ((token = token_peek_next()) != NULL)
+  while ((token = token_peek(1)) != NULL)
   {
     switch (token->type)
     {
