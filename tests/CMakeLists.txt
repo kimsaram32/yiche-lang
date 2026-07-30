@@ -1,5 +1,4 @@
 add_executable(print_tokens "print_tokens.c")
-
 target_link_libraries(print_tokens PRIVATE yiche)
 
 find_program(BASH_PROGRAM bash REQUIRED)
