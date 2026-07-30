@@ -1,0 +1,3 @@
+# Test cases
+tokenizer/*.txt text eol=lf
+parser/*.txt text eol=lf
