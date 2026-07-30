@@ -5,16 +5,16 @@ and the parser.
 
 ## Adding a new test case
 
-Test cases are located in `./tokenizer` and `./parser`.
+Create an input file in `[TYPE]/[TEST_CASE_NAME].txt`.
 
-Create an input file in either directory, named `[TEST_CASE_NAME].txt`.
-`TEST_CASE_NAME` should only consist of lowercase letters and underscores.
+- `TYPE` is one of `tokenizer` and `parser`.
+- `TEST_CASE_NAME` should only consist of lowercase letters and underscores.
 
-Then run in the same directory:
+Then run:
 
 ``` shell
-$ ./generate_test.bash [TEST_CASE_NAME].txt
+$ ./generate_test.bash [path to the CMake build directory] [TYPE] [TEST_CASE_NAME]
 ```
 
-This generates an output file named `TEST_CASE_NAME.expected.txt`.
+This generates an output file in `[TYPE]/[TEST_CASE_NAME].expected.txt`.
 

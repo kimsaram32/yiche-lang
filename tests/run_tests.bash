@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
+#
+# Run all test cases.
+# Usage: run_tests.bash [CMake build directory]
 
 set -u
 shopt -s extglob
 shopt -s nullglob
 
-BIN_PRINT_TOKENS=../build/bin/print_tokens
-BIN_PRINT_AST=../build/bin/print_ast
+CMAKE_BUILD_DIR=$1
+
+BIN_PRINT_TOKENS=${CMAKE_BUILD_DIR}/bin/print_tokens
+BIN_PRINT_AST=${CMAKE_BUILD_DIR}/bin/print_ast
 
 get_output_file_path () {
     local file_input=$1
