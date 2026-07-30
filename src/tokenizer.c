@@ -15,7 +15,7 @@ static void skip_multi_line_comment(void)
   char c;
   int can_exit = 0;
 
-  while ((c = input_advance_char()) != 0)
+  while ((c = input_consume_char()) != 0)
   {
     if (c == '*')
       can_exit = 1;
@@ -57,7 +57,7 @@ static char *read_keyword_or_identifier(char initial)
 
   while (is_letter((buf[i] = input_peek_char(1))) || is_digit(buf[i]))
   {
-    input_advance_char();
+    input_consume_char();
     if (++i == buf_capacity)
     {
       buf_capacity *= 2;
@@ -151,7 +151,7 @@ static token_type_t read_symbol(char c1)
     type = get_symbol_2(c1, c2);
     if (type != -1)
     {
-      input_advance_char();
+      input_consume_char();
       return type;
     }
   }
@@ -179,17 +179,17 @@ static int read_numeric_constant(char initial)
 
     while (is_digit((c = input_peek_char(1))))
     {
-      input_advance_char();
+      input_consume_char();
       val = val * 10 + c - '0';
     }
   }
   else if (((c = input_peek_char(1)) == 'x' || c == 'X') && is_hexadecimal_digit(input_peek_char(2)))
   {
     // hexadecimal constant
-    input_advance_char();
+    input_consume_char();
     while (is_hexadecimal_digit((c = input_peek_char(1))))
     {
-      input_advance_char();
+      input_consume_char();
 
       val *= 16;
       if (c >= 'a')
@@ -236,14 +236,14 @@ static int get_escape_character_value(char c)
 
 static int read_character_constant(void)
 {
-  char c = input_advance_char();
+  char c = input_consume_char();
   int val;
 
   if (c == '\'')
     exit_lexical_error("empty character constant '' not allowed");
   else if (c == '\\')
   {
-    if ((val = get_escape_character_value(input_advance_char())) == -1)
+    if ((val = get_escape_character_value(input_consume_char())) == -1)
       exit_lexical_error("invalid escape sequence");
   }
   else if (is_visible_character(c) || c == ' ' || c == '\t')
@@ -251,7 +251,7 @@ static int read_character_constant(void)
   else
     exit_lexical_error("invalid character constant sequence");
 
-  if (input_advance_char() != '\'')
+  if (input_consume_char() != '\'')
     exit_lexical_error("invalid character constant sequence");
 
   return val;
@@ -263,7 +263,7 @@ void tokenize(void)
     exit_out_of_memory();
 
   char c, c2;
-  while ((c = input_advance_char()) != 0)
+  while ((c = input_consume_char()) != 0)
   {
     if (is_whitespace(c))
       goto skip;
@@ -276,13 +276,13 @@ void tokenize(void)
       {
         // technically '\n' is not part of <single_line_comment>, but it'll get
         // skipped anyway, so do not input_unget_char() it
-        while ((c = input_advance_char()) != 0 && c != '\n');
+        while ((c = input_consume_char()) != 0 && c != '\n');
 
         goto skip;
       }
       else if (c2 == '*')
       {
-        input_advance_char();
+        input_consume_char();
         skip_multi_line_comment();
         goto skip;
       }
@@ -440,7 +440,7 @@ void tokens_print(void)
 
 static int token_next_pos = 0;
 
-token_t *token_advance(void)
+token_t *token_consume(void)
 {
   token_t *tokens_arr = VECTOR_ARR(tokens, token_t);
   if (token_next_pos == tokens->length)

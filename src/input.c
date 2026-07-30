@@ -33,7 +33,7 @@ static void append_next_char_from_file(void)
   *next = file_next_char();
 }
 
-char input_advance_char(void)
+char input_consume_char(void)
 {
   if (input_next_index == input_buffer->length)
     append_next_char_from_file();

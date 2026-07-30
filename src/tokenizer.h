@@ -80,7 +80,7 @@ void tokenize(void);
 
 void tokens_print(void);
 
-token_t *token_advance(void);
+token_t *token_consume(void);
 token_t *token_peek(int n);
 void token_unget(void);
 
