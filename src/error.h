@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "tokenizer.h"
 
-#define exit_with_error(s, ...) do { \
-  fprintf(stderr, s, ## __VA_ARGS__); \
+#define exit_with_error(...) do { \
+  fprintf(stderr, __VA_ARGS__); \
   exit(EXIT_FAILURE); \
 } while (0)
 
