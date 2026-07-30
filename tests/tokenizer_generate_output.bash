@@ -1,26 +1,24 @@
 #!/usr/bin/env bash
 #
 # Generate a test case output for the tokenizer.
-# Usage: generate_tokenizer_output.bash [CMake build directory] [input file name]
+# Usage: tokenizer_generate_output.bash [print_tokens executable] [input file name]
 
 set -u
 
-CMAKE_BUILD_DIR=$1
-FILE_INPUT=$2
+PRINT_TOKENS_EXECUTABLE=$1
+INPUT_FILE=$2
 
-BIN_PRINT_TOKENS=${CMAKE_BUILD_DIR}/bin/print_tokens
-
-if [ ! -f ${BIN_PRINT_TOKENS} ]; then
-    echo "the 'print_tokens' executable does not exist in ${BIN_PRINT_TOKENS}"
+if [ ! -f "${PRINT_TOKENS_EXECUTABLE}" ]; then
+    echo "the 'print_tokens' executable does not exist in ${PRINT_TOKENS_EXECUTABLE}"
     exit 1
 fi
 
-if [ ! -f ${FILE_INPUT} ]; then
-    echo "'${FILE_INPUT}' does not exist"
+if [ ! -f "${INPUT_FILE}" ]; then
+    echo "'${INPUT_FILE}' does not exist"
     exit 1
 fi
 
-file_output=${FILE_INPUT%.*}.expected.txt
+output_file=${INPUT_FILE%.*}.expected.txt
 
-${BIN_PRINT_TOKENS} < ${FILE_INPUT} > ${file_output} 2>&1
-echo "wrote output to ${file_output}"
+"${PRINT_TOKENS_EXECUTABLE}" < "${INPUT_FILE}" > "${output_file}" 2>&1
+echo "wrote output to ${output_file}"
