@@ -1,0 +1,16 @@
+fn main(): int {
+  println(10);
+  println(234);
+  println(101);
+
+  println(0x1);
+  println(0xff);
+  println(0xfff);
+
+  println('\0');
+  println('\n');
+  println('\\');
+  println('\'');
+
+  return 0;
+}

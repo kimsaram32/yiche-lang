@@ -1,10 +1,13 @@
 var a: int = 1;
 
 fn f(): int {
-  return a;
+  println(a);
+  return 0;
 }
 
 fn main(): int {
   var a: int = 2;
-  return f();
+  println(a);
+  f();
+  return 0;
 }

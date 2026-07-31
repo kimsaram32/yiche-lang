@@ -1,0 +1,9 @@
+t1
+t1
+ft1
+ff0
+tt1
+tf0
+f0
+f0
+returned 0

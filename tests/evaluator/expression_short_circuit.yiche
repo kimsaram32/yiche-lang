@@ -1,0 +1,23 @@
+fn f(): int {
+  print_char('f');
+  return 0;
+}
+
+fn t(): int {
+  print_char('t');
+  return 1;
+}
+
+fn main(): int {
+  println(t() || t());
+  println(t() || f());
+  println(f() || t());
+  println(f() || f());
+
+  println(t() && t());
+  println(t() && f());
+  println(f() && t());
+  println(f() && f());
+
+  return 0;
+}
