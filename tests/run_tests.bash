@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 #
 # Run all test cases.
-# Usage: run_tests.bash [CMake build directory]
+# Usage: run_tests.bash [print_tokens executable] [print_ast executable] [run_evaluator executable]
 
 set -u
 shopt -s extglob
 shopt -s nullglob
 
-CMAKE_BUILD_DIR=$1
-
-BIN_PRINT_TOKENS=${CMAKE_BUILD_DIR}/bin/print_tokens
-BIN_PRINT_AST=${CMAKE_BUILD_DIR}/bin/print_ast
+PRINT_TOKENS_EXECUTABLE=$1
+PRINT_AST_EXECUTABLE=$2
+RUN_EVALUATOR_EXECUTABLE=$3
 
 get_output_file_path () {
     local file_input=$1
@@ -23,7 +22,7 @@ failed=0
 
 run_tests () {
     local type=$1
-    local bin_print=$2
+    local executable=$2
     local input_ext=$3
 
     for file_input in ./${type}/*([a-z]|_).${input_ext}; do
@@ -31,7 +30,7 @@ run_tests () {
 
         local file_output=$(get_output_file_path ${file_input})
 
-        ${bin_print} < "${file_input}" 2>&1 | diff -u --color=auto "${file_output}" -
+        ${executable} < "${file_input}" 2>&1 | diff -u --color=auto "${file_output}" -
 
         local status=$?
 
@@ -46,8 +45,9 @@ run_tests () {
     done
 }
 
-run_tests tokenizer $BIN_PRINT_TOKENS txt
-run_tests parser $BIN_PRINT_AST yiche
+run_tests tokenizer ${PRINT_TOKENS_EXECUTABLE} txt
+run_tests parser ${PRINT_AST_EXECUTABLE} yiche
+run_tests evaluator ${RUN_EVALUATOR_EXECUTABLE} yiche
 
 succeeded=$(( total - failed ))
 

@@ -2,7 +2,10 @@
 
 Golden tests are done by comparing outputs of the components.
 
-Currently, the component types are `tokenizer` and `parser`.
+Currently, the component types are:
+- `tokenizer`
+- `parser`
+- `evaluator`.
 
 ## Adding a new test case
 
@@ -12,6 +15,7 @@ The file path depends on the component type.
 
 - For `tokenizer`: `tokenizer/[TEST_CASE_NAME].txt`
 - For `parser`: `parser/[TEST_CASE_NAME].yiche`
+- For `evaluator`: `evaluator/[TEST_CASE_NAME].yiche`
 
 `TEST_CASE_NAME` should only consist of lowercase letters and underscores.
 
