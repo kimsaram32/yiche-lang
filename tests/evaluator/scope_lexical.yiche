@@ -1,0 +1,10 @@
+var a: int = 1;
+
+fn f(): int {
+  return a;
+}
+
+fn main(): int {
+  var a: int = 2;
+  return f();
+}

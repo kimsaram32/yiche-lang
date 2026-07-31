@@ -1,0 +1,6 @@
+fn main(): int {
+  var a: int = 0;
+  a = 1;
+  a = 2;
+  return a;
+}

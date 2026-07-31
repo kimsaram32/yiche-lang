@@ -1,0 +1,7 @@
+fn f(var a: int): int {
+  return a;
+}
+
+fn main(): int {
+  return f();
+}
