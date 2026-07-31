@@ -1,0 +1,12 @@
+var g1: int;
+var g2: int = 5;
+var g3: int = 3 + 5;
+
+fn f1(): int {
+}
+
+fn f2(var a: int): int {
+}
+
+fn f3(var a: int, var b: int): int {
+}

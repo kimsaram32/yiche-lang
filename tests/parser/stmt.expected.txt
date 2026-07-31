@@ -1,0 +1,87 @@
+program {
+  decls[1] = {
+    function_decl {
+      identifier = main
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[7] = {
+          expr_stmt {
+            expr = primitive_expr {
+              constant = 2
+            }
+          }
+          if_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          if_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          while_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          while_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[0] = {
+              }
+            }
+          }
+          while_stmt {
+            expr = primitive_expr {
+              constant = 1
+            }
+            stmt_list = stmt_list {
+              stmts[1] = {
+                while_stmt {
+                  expr = primitive_expr {
+                    constant = 1
+                  }
+                  stmt_list = stmt_list {
+                    stmts[1] = {
+                      if_stmt {
+                        expr = primitive_expr {
+                          constant = 1
+                        }
+                        stmt_list = stmt_list {
+                          stmts[0] = {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          return_stmt {
+            expr = primitive_expr {
+              constant = 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

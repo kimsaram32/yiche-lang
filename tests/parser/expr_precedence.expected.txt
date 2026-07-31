@@ -6,7 +6,77 @@ program {
       parameters[0] = {
       }
       body = stmt_list {
-        stmts[4] = {
+        stmts[3] = {
+          expr_stmt {
+            expr = binary_expr {
+              operator = =
+              left = primitive_expr {
+                identifier = result
+              }
+              right = binary_expr {
+                operator = ||
+                left = primitive_expr {
+                  identifier = a
+                }
+                right = binary_expr {
+                  operator = &&
+                  left = primitive_expr {
+                    identifier = b
+                  }
+                  right = binary_expr {
+                    operator = ==
+                    left = primitive_expr {
+                      identifier = c
+                    }
+                    right = binary_expr {
+                      operator = <
+                      left = primitive_expr {
+                        identifier = d
+                      }
+                      right = binary_expr {
+                        operator = +
+                        left = primitive_expr {
+                          identifier = e
+                        }
+                        right = binary_expr {
+                          operator = *
+                          left = primitive_expr {
+                            identifier = f
+                          }
+                          right = unary_expr {
+                            operator = !
+                            operand = function_call_expr {
+                              callee = g
+                              arguments[4] = {
+                                primitive_expr {
+                                  identifier = h
+                                }
+                                primitive_expr {
+                                  identifier = i
+                                }
+                                binary_expr {
+                                  operator = =
+                                  left = primitive_expr {
+                                    identifier = j
+                                  }
+                                  right = primitive_expr {
+                                    identifier = k
+                                  }
+                                }
+                                primitive_expr {
+                                  identifier = l
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
           expr_stmt {
             expr = binary_expr {
               operator = =
@@ -25,7 +95,7 @@ program {
                         operator = ==
                         left = function_call_expr {
                           callee = foo
-                          arguments[4] = {
+                          arguments[3] = {
                             binary_expr {
                               operator = =
                               left = primitive_expr {
@@ -51,24 +121,6 @@ program {
                               operator = !
                               operand = primitive_expr {
                                 identifier = e
-                              }
-                            }
-                            function_call_expr {
-                              callee = f
-                              arguments[1] = {
-                                function_call_expr {
-                                  callee = g
-                                  arguments[1] = {
-                                    function_call_expr {
-                                      callee = h
-                                      arguments[1] = {
-                                        primitive_expr {
-                                          identifier = i
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
                               }
                             }
                             binary_expr {
@@ -260,64 +312,6 @@ program {
             expr = binary_expr {
               operator = =
               left = primitive_expr {
-                identifier = result
-              }
-              right = function_call_expr {
-                callee = foo
-                arguments[3] = {
-                  binary_expr {
-                    operator = =
-                    left = primitive_expr {
-                      identifier = a
-                    }
-                    right = binary_expr {
-                      operator = +
-                      left = primitive_expr {
-                        identifier = b
-                      }
-                      right = binary_expr {
-                        operator = *
-                        left = primitive_expr {
-                          identifier = c
-                        }
-                        right = primitive_expr {
-                          identifier = d
-                        }
-                      }
-                    }
-                  }
-                  unary_expr {
-                    operator = !
-                    operand = primitive_expr {
-                      identifier = e
-                    }
-                  }
-                  function_call_expr {
-                    callee = f
-                    arguments[1] = {
-                      function_call_expr {
-                        callee = g
-                        arguments[1] = {
-                          function_call_expr {
-                            callee = h
-                            arguments[1] = {
-                              primitive_expr {
-                                identifier = i
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-          expr_stmt {
-            expr = binary_expr {
-              operator = =
-              left = primitive_expr {
                 identifier = a
               }
               right = binary_expr {
@@ -338,7 +332,7 @@ program {
                         operator = <
                         left = function_call_expr {
                           callee = foo
-                          arguments[4] = {
+                          arguments[3] = {
                             binary_expr {
                               operator = +
                               left = primitive_expr {
@@ -374,30 +368,6 @@ program {
                                   }
                                   right = primitive_expr {
                                     identifier = dd
-                                  }
-                                }
-                              }
-                            }
-                            function_call_expr {
-                              callee = bar
-                              arguments[2] = {
-                                function_call_expr {
-                                  callee = baz
-                                  arguments[2] = {
-                                    primitive_expr {
-                                      constant = 1
-                                    }
-                                    primitive_expr {
-                                      constant = 2
-                                    }
-                                  }
-                                }
-                                function_call_expr {
-                                  callee = qux
-                                  arguments[1] = {
-                                    primitive_expr {
-                                      identifier = quux
-                                    }
                                   }
                                 }
                               }
@@ -501,69 +471,6 @@ program {
                         }
                       }
                     }
-                  }
-                }
-              }
-            }
-          }
-          expr_stmt {
-            expr = binary_expr {
-              operator = =
-              left = primitive_expr {
-                identifier = a
-              }
-              right = binary_expr {
-                operator = &&
-                left = function_call_expr {
-                  callee = x
-                  arguments[2] = {
-                    binary_expr {
-                      operator = ==
-                      left = binary_expr {
-                        operator = +
-                        left = function_call_expr {
-                          callee = foo
-                          arguments[1] = {
-                            primitive_expr {
-                              identifier = b
-                            }
-                          }
-                        }
-                        right = binary_expr {
-                          operator = *
-                          left = binary_expr {
-                            operator = +
-                            left = primitive_expr {
-                              identifier = c
-                            }
-                            right = primitive_expr {
-                              identifier = d
-                            }
-                          }
-                          right = binary_expr {
-                            operator = -
-                            left = primitive_expr {
-                              identifier = e
-                            }
-                            right = primitive_expr {
-                              identifier = f
-                            }
-                          }
-                        }
-                      }
-                      right = primitive_expr {
-                        identifier = g
-                      }
-                    }
-                    primitive_expr {
-                      identifier = a
-                    }
-                  }
-                }
-                right = unary_expr {
-                  operator = !
-                  operand = primitive_expr {
-                    identifier = h
                   }
                 }
               }

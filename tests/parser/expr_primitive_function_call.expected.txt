@@ -1,0 +1,59 @@
+program {
+  decls[1] = {
+    function_decl {
+      identifier = main
+      return_data_type = int
+      parameters[0] = {
+      }
+      body = stmt_list {
+        stmts[6] = {
+          expr_stmt {
+            expr = primitive_expr {
+              identifier = a
+            }
+          }
+          expr_stmt {
+            expr = primitive_expr {
+              constant = 42
+            }
+          }
+          expr_stmt {
+            expr = primitive_expr {
+              identifier = a
+            }
+          }
+          expr_stmt {
+            expr = function_call_expr {
+              callee = foo
+              arguments[0] = {
+              }
+            }
+          }
+          expr_stmt {
+            expr = function_call_expr {
+              callee = foo
+              arguments[1] = {
+                primitive_expr {
+                  identifier = a
+                }
+              }
+            }
+          }
+          expr_stmt {
+            expr = function_call_expr {
+              callee = foo
+              arguments[2] = {
+                primitive_expr {
+                  identifier = a
+                }
+                primitive_expr {
+                  identifier = b
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
