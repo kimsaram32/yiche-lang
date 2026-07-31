@@ -127,12 +127,25 @@ static void evaluate_env_add_symbol_table_entry(evaluate_env_t *env, symbol_tabl
  * Built-in functions
  */
 
-static evaluate_value_t builtin_function_print_num(evaluate_context_t *ctx,
-                                                   evaluate_value_t *arguments)
+static evaluate_value_t builtin_function_print(evaluate_context_t *ctx,
+                                               evaluate_value_t *arguments)
 {
   evaluate_value_t n = arguments[0];
 
   printf("%d", n.value_int);
+
+  return (evaluate_value_t){
+    .data_type = DATA_TYPE_INT,
+    .value_int = 0,
+  };
+}
+
+static evaluate_value_t builtin_function_println(evaluate_context_t *ctx,
+                                                  evaluate_value_t *arguments)
+{
+  evaluate_value_t n = arguments[0];
+
+  printf("%d\n", n.value_int);
 
   return (evaluate_value_t){
     .data_type = DATA_TYPE_INT,
@@ -153,17 +166,6 @@ static evaluate_value_t builtin_function_print_char(evaluate_context_t *ctx,
   };
 }
 
-static evaluate_value_t builtin_function_print_ln(evaluate_context_t *ctx,
-                                                  evaluate_value_t *arguments)
-{
-  printf("\n");
-
-  return (evaluate_value_t){
-    .data_type = DATA_TYPE_INT,
-    .value_int = 0,
-  };
-}
-
 #define BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(name, parameters_length) \
   { \
     .symbol_identifier = # name, \
@@ -176,9 +178,9 @@ static evaluate_value_t builtin_function_print_ln(evaluate_context_t *ctx,
   }
 
 static symbol_table_entry_t builtin_symbol_table_entries[] = {
-  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_num, 1),
+  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print, 1),
+  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(println, 1),
   BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_char, 1),
-  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_ln, 0),
 };
 
 // 'table' should not contain any elements with the same name as one of the
