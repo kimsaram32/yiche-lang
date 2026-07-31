@@ -3,8 +3,22 @@
 #include "yiche.h"
 
 /*
- * Symbol tables and execution environments
+ * Types
  */
+
+typedef struct evaluate_env_t
+{
+  HASH_TABLE_T(symbol_table_entry_t) *symbol_table;
+  struct evaluate_env_t *parent, *prev;
+}
+evaluate_env_t;
+
+typedef struct
+{
+  hash_table_t *builtin_symbol_table;
+  evaluate_env_t *current_env, *global_env;
+}
+evaluate_context_t;
 
 typedef enum
 {
@@ -15,12 +29,44 @@ symbol_type_t;
 
 typedef struct
 {
+  evaluate_value_t value;
+}
+symbol_table_entry_variable_t;
+
+typedef enum
+{
+  FUNCTION_TYPE_RUNTIME,
+  FUNCTION_TYPE_BUILTIN,
+}
+function_type_t;
+
+// Accesses to 'args + i' with '0 <= i < builtin_params_length' is safe.
+typedef evaluate_value_t (*builtin_function_t)(evaluate_context_t *ctx, evaluate_value_t *args);
+
+typedef struct
+{
+  function_type_t type;
+  ast_node_t *runtime_node;
+  int builtin_parameters_length;
+  builtin_function_t builtin_function;
+}
+symbol_table_entry_function_t;
+
+typedef struct
+{
   char *symbol_identifier;
   symbol_type_t symbol_type;
-  evaluate_value_t variable_value;
-  ast_node_t *function_node;
+  union
+  {
+    symbol_table_entry_variable_t data_variable;
+    symbol_table_entry_function_t data_function;
+  };
 }
 symbol_table_entry_t;
+
+/*
+ * Symbol tables
+ */
 
 static void symbol_table_entry_free(void *p)
 {
@@ -28,14 +74,17 @@ static void symbol_table_entry_free(void *p)
   free(entry);
 }
 
-typedef struct evaluate_env_t
-{
-  HASH_TABLE_T(symbol_table_entry_t) *symbol_table;
-  struct evaluate_env_t *parent, *prev;
-}
-evaluate_env_t;
+#define SYMBOL_TABLE_INITIAL_CAPACITY 107
 
-#define EVALUATE_ENV_SYMBOL_TABLE_INITIAL_CAPACITY 107
+static hash_table_t *symbol_table_create(void)
+{
+  return hash_table_create(SYMBOL_TABLE_INITIAL_CAPACITY,
+                           symbol_table_entry_free);
+}
+
+/*
+ * Execution environments
+ */
 
 // The ownership to prev (but not parent) is transferred to the new environment.
 static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent, evaluate_env_t *prev)
@@ -44,8 +93,7 @@ static evaluate_env_t *evaluate_env_create(evaluate_env_t *parent, evaluate_env_
   if (env == NULL)
     return NULL;
 
-  env->symbol_table = hash_table_create(EVALUATE_ENV_SYMBOL_TABLE_INITIAL_CAPACITY,
-                                        symbol_table_entry_free);
+  env->symbol_table = symbol_table_create();
   if (env->symbol_table == NULL)
   {
     free(env);
@@ -66,42 +114,6 @@ static void evaluate_env_free(evaluate_env_t *env)
   free(env);
 }
 
-static symbol_table_entry_t *evaluate_env_lookup_symbol_table_entry(evaluate_env_t *env, char *symbol_identifier)
-{
-  while (env != NULL)
-  {
-    symbol_table_entry_t *entry = hash_table_search(env->symbol_table, symbol_identifier);
-    if (entry != NULL)
-      return entry;
-    env = env->parent;
-  }
-  return NULL;
-}
-
-static symbol_table_entry_t *evaluate_env_lookup_variable(evaluate_env_t *env, char *symbol_identifier)
-{
-  symbol_table_entry_t *entry = evaluate_env_lookup_symbol_table_entry(env, symbol_identifier);
-
-  if (entry == NULL)
-    exit_runtime_error("undeclared identifier '%s'", symbol_identifier);
-  else if (entry->symbol_type != SYMBOL_TYPE_VARIABLE)
-    exit_runtime_error("identifier '%s' is not a variable", symbol_identifier);
-
-  return entry;
-}
-
-static symbol_table_entry_t *evaluate_env_lookup_function(evaluate_env_t *env, char *symbol_identifier)
-{
-  symbol_table_entry_t *entry = evaluate_env_lookup_symbol_table_entry(env, symbol_identifier);
-
-  if (entry == NULL)
-    exit_runtime_error("undeclared identifier '%s'", symbol_identifier);
-  else if (entry->symbol_type != SYMBOL_TYPE_FUNCTION)
-    exit_runtime_error("identifier '%s' is not a function", symbol_identifier);
-
-  return entry;
-}
-
 static void evaluate_env_add_symbol_table_entry(evaluate_env_t *env, symbol_table_entry_t *entry)
 {
   if (hash_table_search(env->symbol_table, entry->symbol_identifier))
@@ -112,14 +124,83 @@ static void evaluate_env_add_symbol_table_entry(evaluate_env_t *env, symbol_tabl
 }
 
 /*
- * Evaluation context
+ * Built-in functions
  */
 
-typedef struct
+static evaluate_value_t builtin_function_print_num(evaluate_context_t *ctx,
+                                                   evaluate_value_t *arguments)
 {
-  evaluate_env_t *current_env, *global_env;
+  evaluate_value_t n = arguments[0];
+
+  printf("%d", n.value_int);
+
+  return (evaluate_value_t){
+    .data_type = DATA_TYPE_INT,
+    .value_int = 0,
+  };
 }
-evaluate_context_t;
+
+static evaluate_value_t builtin_function_print_char(evaluate_context_t *ctx,
+                                                    evaluate_value_t *arguments)
+{
+  evaluate_value_t n = arguments[0];
+
+  printf("%c", n.value_int);
+
+  return (evaluate_value_t){
+    .data_type = DATA_TYPE_INT,
+    .value_int = 0,
+  };
+}
+
+static evaluate_value_t builtin_function_print_ln(evaluate_context_t *ctx,
+                                                  evaluate_value_t *arguments)
+{
+  printf("\n");
+
+  return (evaluate_value_t){
+    .data_type = DATA_TYPE_INT,
+    .value_int = 0,
+  };
+}
+
+#define BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(name, parameters_length) \
+  { \
+    .symbol_identifier = # name, \
+    .symbol_type = SYMBOL_TYPE_FUNCTION, \
+    .data_function = { \
+      .type = FUNCTION_TYPE_BUILTIN, \
+      .builtin_parameters_length = parameters_length, \
+      .builtin_function = builtin_function_ ## name, \
+    }, \
+  }
+
+static symbol_table_entry_t builtin_symbol_table_entries[] = {
+  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_num, 1),
+  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_char, 1),
+  BUILTIN_FUNCTION_SYMBOL_TABLE_ENTRY(print_ln, 0),
+};
+
+// 'table' should not contain any elements with the same name as one of the
+// built-in functions.
+static void builtin_add_symbol_table_entries(hash_table_t *table)
+{
+  for (int i = 0; i < ARRAY_LENGTH(builtin_symbol_table_entries); i++)
+  {
+    symbol_table_entry_t *entry = malloc(sizeof(symbol_table_entry_t));
+    if (entry == NULL)
+      exit_out_of_memory();
+
+    memcpy(entry, builtin_symbol_table_entries + i, sizeof(symbol_table_entry_t));
+
+    if (!hash_table_insert(table, entry->symbol_identifier, entry))
+      exit_out_of_memory();
+  }
+}
+
+/*
+ * Evaluation context
+ */
 
 static evaluate_context_t *evaluate_context_create(void)
 {
@@ -127,13 +208,22 @@ static evaluate_context_t *evaluate_context_create(void)
   if (ctx == NULL)
     return NULL;
 
-  if ((ctx->global_env = evaluate_env_create(NULL, NULL)) == NULL)
+  if ((ctx->builtin_symbol_table = symbol_table_create()) == NULL)
   {
     free(ctx);
     return NULL;
   }
 
+  if ((ctx->global_env = evaluate_env_create(NULL, NULL)) == NULL)
+  {
+    hash_table_free(ctx->builtin_symbol_table);
+    free(ctx);
+    return NULL;
+  }
+
   ctx->current_env = ctx->global_env;
+
+  builtin_add_symbol_table_entries(ctx->builtin_symbol_table);
 
   return ctx;
 }
@@ -141,6 +231,8 @@ static evaluate_context_t *evaluate_context_create(void)
 static void evaluate_context_free(evaluate_context_t *ctx)
 {
   evaluate_env_t *env = ctx->current_env, *next_env;
+
+  hash_table_free(ctx->builtin_symbol_table);
 
   while (env != NULL)
   {
@@ -169,6 +261,46 @@ static void evaluate_context_exit_current_env(evaluate_context_t *ctx)
   evaluate_env_t *prev_env = ctx->current_env->prev;
   evaluate_env_free(ctx->current_env);
   ctx->current_env = prev_env;
+}
+
+static symbol_table_entry_t *evaluate_context_lookup_symbol_table_entry(evaluate_context_t *ctx,
+                                                                        char *symbol_identifier)
+{
+  evaluate_env_t *env = ctx->current_env;
+  while (env != NULL)
+  {
+    symbol_table_entry_t *entry = hash_table_search(env->symbol_table, symbol_identifier);
+    if (entry != NULL)
+      return entry;
+    env = env->parent;
+  }
+  return hash_table_search(ctx->builtin_symbol_table, symbol_identifier);
+}
+
+static symbol_table_entry_t *evaluate_context_lookup_variable(evaluate_context_t *ctx,
+                                                              char *symbol_identifier)
+{
+  symbol_table_entry_t *entry = evaluate_context_lookup_symbol_table_entry(ctx, symbol_identifier);
+
+  if (entry == NULL)
+    exit_runtime_error("undeclared identifier '%s'", symbol_identifier);
+  else if (entry->symbol_type != SYMBOL_TYPE_VARIABLE)
+    exit_runtime_error("identifier '%s' is not a variable", symbol_identifier);
+
+  return entry;
+}
+
+static symbol_table_entry_t *evaluate_context_lookup_function(evaluate_context_t *ctx,
+                                                              char *symbol_identifier)
+{
+  symbol_table_entry_t *entry = evaluate_context_lookup_symbol_table_entry(ctx, symbol_identifier);
+
+  if (entry == NULL)
+    exit_runtime_error("undeclared identifier '%s'", symbol_identifier);
+  else if (entry->symbol_type != SYMBOL_TYPE_FUNCTION)
+    exit_runtime_error("identifier '%s' is not a function", symbol_identifier);
+
+  return entry;
 }
 
 /*
@@ -200,19 +332,35 @@ static evaluate_stmt_result_t evaluate_stmt_list(evaluate_context_t *ctx, ast_no
 static void evaluate_variable_decl(evaluate_context_t *ctx, ast_node_t *node);
 static void evaluate_function_decl(evaluate_context_t *ctx, ast_node_t *node);
 
-static evaluate_value_t call_function(evaluate_context_t *ctx, ast_node_t *function_node,
-                                      VECTOR_T(evaluate_value_t) *arguments)
+static void assert_argument_count_match(int expected, int passed, char *identifier)
 {
-  ast_node_function_decl_t function_data = function_node->data_function_decl;
+  if (expected != passed)
+    exit_runtime_error("function call argument mismatch: '%s' expects %d argument(s),"
+                       " but %d got passed", identifier, expected, passed);
+}
+
+static evaluate_value_t call_builtin_function(evaluate_context_t *ctx, symbol_table_entry_t *entry,
+                                              VECTOR_T(evaluate_value_t) *arguments)
+{
+  evaluate_value_t *arguments_arr = VECTOR_ARR(arguments, evaluate_value_t);
+
+  assert_argument_count_match(entry->data_function.builtin_parameters_length,
+                              arguments->length,
+                              entry->symbol_identifier);
+
+  return entry->data_function.builtin_function(ctx, arguments_arr);
+}
+
+static evaluate_value_t call_runtime_function(evaluate_context_t *ctx, ast_node_t *runtime_node,
+                                              VECTOR_T(evaluate_value_t) *arguments)
+{
+  ast_node_function_decl_t function_data = runtime_node->data_function_decl;
   ast_node_t **parameters_arr = VECTOR_ARR(function_data.parameters, ast_node_t*);
   evaluate_value_t *arguments_arr = VECTOR_ARR(arguments, evaluate_value_t);
 
-  if (function_data.parameters->length != arguments->length)
-    exit_runtime_error("function call argument mismatch: '%s' expects %d argument(s),"
-                       " but %d got passed",
-                       function_data.token_identifier->identifier,
-                       function_data.parameters->length,
-                       arguments->length);
+  assert_argument_count_match(function_data.parameters->length,
+                              arguments->length,
+                              function_data.token_identifier->identifier);
 
   evaluate_context_enter_new_env(ctx, ctx->global_env);
 
@@ -227,20 +375,32 @@ static evaluate_value_t call_function(evaluate_context_t *ctx, ast_node_t *funct
 
     symbol_table_entry->symbol_identifier = param_identifier;
     symbol_table_entry->symbol_type = SYMBOL_TYPE_VARIABLE;
-    symbol_table_entry->variable_value = arguments_arr[i];
+    symbol_table_entry->data_variable.value = arguments_arr[i];
 
     evaluate_env_add_symbol_table_entry(ctx->current_env, symbol_table_entry);
   }
 
-  evaluate_stmt_result_t result = evaluate_stmt_list(ctx, function_node->data_function_decl.body);
+  evaluate_stmt_result_t result = evaluate_stmt_list(ctx, runtime_node->data_function_decl.body);
 
   evaluate_context_exit_current_env(ctx);
 
   if (!result.returned)
     exit_runtime_error("function '%s' does not return a value",
-                       function_node->data_function_decl.token_identifier->identifier);
+                       runtime_node->data_function_decl.token_identifier->identifier);
 
   return result.returned_value;
+}
+
+static evaluate_value_t call_function(evaluate_context_t *ctx, symbol_table_entry_t *entry,
+                                      VECTOR_T(evaluate_value_t) *arguments)
+{
+  switch (entry->data_function.type)
+  {
+    case FUNCTION_TYPE_BUILTIN:
+      return call_builtin_function(ctx, entry, arguments);
+    case FUNCTION_TYPE_RUNTIME:
+      return call_runtime_function(ctx, entry->data_function.runtime_node, arguments);
+  }
 }
 
 static evaluate_value_t evaluate_expr(evaluate_context_t *ctx, ast_node_t *node)
@@ -275,9 +435,9 @@ static evaluate_value_t evaluate_primitive_expr(evaluate_context_t *ctx, ast_nod
     case TOKEN_IDENTIFIER:
     {
       char *identifier = node->data_primitive_expr.token->identifier;
-      symbol_table_entry_t *entry = evaluate_env_lookup_variable(ctx->current_env, identifier);
+      symbol_table_entry_t *entry = evaluate_context_lookup_variable(ctx, identifier);
 
-      result.value_int = entry->variable_value.value_int;
+      result.value_int = entry->data_variable.value.value_int;
       break;
     }
     case TOKEN_CONSTANT:
@@ -319,10 +479,10 @@ static evaluate_value_t evaluate_binary_expr(evaluate_context_t *ctx, ast_node_t
   if (operator == BINARY_OPERATOR_ASSIGNMENT)
   {
     char *identifier = lhs_node->data_primitive_expr.token->identifier;
-    symbol_table_entry_t *entry = evaluate_env_lookup_variable(ctx->current_env, identifier);
+    symbol_table_entry_t *entry = evaluate_context_lookup_variable(ctx, identifier);
 
-    entry->variable_value = evaluate_expr(ctx, rhs_node);
-    return entry->variable_value;
+    entry->data_variable.value = evaluate_expr(ctx, rhs_node);
+    return entry->data_variable.value;
   }
 
   evaluate_value_t result = {
@@ -395,7 +555,7 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
 {
   char *function_identifier = node->data_function_call_expr.token_callee->identifier;
   symbol_table_entry_t *symbol_table_function_entry =
-    evaluate_env_lookup_function(ctx->current_env, function_identifier);
+    evaluate_context_lookup_function(ctx, function_identifier);
 
   VECTOR_T(evaluate_value_t) *argument_values = vector_create(sizeof(evaluate_value_t), 8);
   VECTOR_T(ast_node_t*) *argument_nodes = node->data_function_call_expr.arguments;
@@ -407,7 +567,7 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
   }
 
   evaluate_value_t returned_value =
-    call_function(ctx,symbol_table_function_entry->function_node, argument_values);
+    call_function(ctx, symbol_table_function_entry, argument_values);
 
   vector_free(argument_values);
   return returned_value;
@@ -506,13 +666,13 @@ static void evaluate_variable_decl(evaluate_context_t *ctx, ast_node_t *node)
 
   if (node->data_variable_decl.initializer == NULL)
   {
-    symbol_table_entry->variable_value = (evaluate_value_t){
+    symbol_table_entry->data_variable.value = (evaluate_value_t){
       .data_type = DATA_TYPE_INT,
       .value_int = 0,
     };
   }
   else
-    symbol_table_entry->variable_value = evaluate_expr(ctx, node->data_variable_decl.initializer);
+    symbol_table_entry->data_variable.value = evaluate_expr(ctx, node->data_variable_decl.initializer);
 
   evaluate_env_add_symbol_table_entry(ctx->current_env, symbol_table_entry);
 }
@@ -525,7 +685,8 @@ static void evaluate_function_decl(evaluate_context_t *ctx, ast_node_t *node)
 
   symbol_table_entry->symbol_identifier = node->data_function_decl.token_identifier->identifier;
   symbol_table_entry->symbol_type = SYMBOL_TYPE_FUNCTION;
-  symbol_table_entry->function_node = node;
+  symbol_table_entry->data_function.type = FUNCTION_TYPE_RUNTIME;
+  symbol_table_entry->data_function.runtime_node = node;
 
   evaluate_env_add_symbol_table_entry(ctx->current_env, symbol_table_entry);
 }
@@ -561,7 +722,7 @@ static evaluate_value_t evaluate_program(ast_node_t *node)
 
   VECTOR_T(evaluate_value_t) *arguments = vector_create(sizeof(evaluate_value_t), 8);
   // TODO: Add some arguments to main()
-  evaluate_value_t result = call_function(ctx, node_main_function_decl, arguments);
+  evaluate_value_t result = call_runtime_function(ctx, node_main_function_decl, arguments);
   vector_free(arguments);
 
   evaluate_context_free(ctx);
