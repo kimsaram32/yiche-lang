@@ -12,7 +12,7 @@ target_sources(
           evaluator.c
   PUBLIC FILE_SET headers TYPE HEADERS FILES yiche.h)
 
-add_executable(yiche-driver)
-set_target_properties(yiche-driver PROPERTIES OUTPUT_NAME "yiche")
-target_sources(yiche-driver PRIVATE main.c)
-target_link_libraries(yiche-driver PRIVATE yiche)
+add_executable(yiche_driver)
+set_target_properties(yiche_driver PROPERTIES OUTPUT_NAME "yiche")
+target_sources(yiche_driver PRIVATE main.c)
+target_link_libraries(yiche_driver PRIVATE yiche)
