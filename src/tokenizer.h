@@ -82,7 +82,6 @@ void tokens_print(void);
 
 token_t *token_consume(void);
 token_t *token_peek(int n);
-void token_unget(void);
 
 // If 'token' is non-NULL and matches one of the type(s), return the token.
 // Otherwise, throw an error.

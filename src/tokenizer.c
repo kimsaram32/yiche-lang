@@ -459,13 +459,6 @@ token_t *token_peek(int n)
   return &tokens_arr[token_next_pos + n - 1];
 }
 
-void token_unget(void)
-{
-  if (token_next_pos == 0)
-    exit_with_error("token_unget(): no token to unget");
-  token_next_pos--;
-}
-
 static token_t *token_assertn(int n, token_t *token, ...)
 {
   va_list types;
