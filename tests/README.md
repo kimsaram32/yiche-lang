@@ -15,13 +15,13 @@ The file path depends on the component type.
 
 `TEST_CASE_NAME` should only consist of lowercase letters and underscores.
 
-2. Generate the output file.
+2. Regenerate the output files.
 
-The executables for the running the test cases must have been built via CMake.
+Run the custom target for the component type after adding the input file.
 
 ``` shell
-$ ./[TYPE]_generate_output.bash [path to the CMake build directory] [path to the input file]
+$ cmake --build [path to the CMake build directory] --target generate_[TYPE]_outputs
 ```
 
-This generates an output file in `[TYPE]/[TEST_CASE_NAME].expected.txt`.
+This generates output files in `[TYPE]/[TEST_CASE_NAME].expected.txt`.
 
