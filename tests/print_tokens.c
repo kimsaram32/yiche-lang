@@ -2,9 +2,7 @@
 
 int main(void)
 {
-  input_init();
-
-  tokenize();
+  tokenize(stdin);
   tokens_print();
 
   return 0;

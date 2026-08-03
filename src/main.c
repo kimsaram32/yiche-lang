@@ -5,10 +5,8 @@
 
 int main(void)
 {
-  input_init();
-
   printf("TOKENIZING\n");
-  tokenize();
+  tokenize(stdin);
   tokens_print();
 
   printf("PARSING\n");

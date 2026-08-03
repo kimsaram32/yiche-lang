@@ -2,9 +2,7 @@
 
 int main(void)
 {
-  input_init();
-
-  tokenize();
+  tokenize(stdin);
 
   ast_node_t *root = parse();
   ast_node_print(root);

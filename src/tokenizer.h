@@ -72,8 +72,8 @@ typedef struct
 }
 token_t;
 
-// Initializes an array of tokens, reading characters from the standard input.
-void tokenize(void);
+// Initializes an array of tokens, reading characters from 'stream'.
+void tokenize(FILE *stream);
 
 // The remaining functions operate on the last array of tokens produced by
 // 'tokenize()', and must be used after calling it.
