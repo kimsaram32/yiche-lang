@@ -72,16 +72,23 @@ typedef struct
 }
 token_t;
 
-// Initializes an array of tokens, reading characters from 'stream'.
-void tokenize(FILE *stream);
+// Internally, name it as 'ctx'. External users should name it as 'tokenizer'.
+// TODO: I don't think I like this... but naming it 'tokenizer' makes the code
+// less readable in internal usage.
+typedef struct tokenizer_context_t tokenizer_context_t;
 
-// The remaining functions operate on the last array of tokens produced by
-// 'tokenize()', and must be used after calling it.
+tokenizer_context_t *tokenizer_context_create(FILE *stream);
+void tokenizer_context_free(tokenizer_context_t *tokenizer);
 
-void tokens_print(void);
+// Appends tokens to the internal array, reading the stream til the end.
+void tokenize(tokenizer_context_t *tokenizer);
 
-token_t *token_consume(void);
-token_t *token_peek(int n);
+// The functions below must be used after 'tokenize()' is called with 'tokenizer'.
+
+void tokens_print(tokenizer_context_t *tokenizer);
+
+token_t *token_consume(tokenizer_context_t *tokenizer);
+token_t *token_peek(tokenizer_context_t *tokenizer, int n);
 
 // If 'token' is non-NULL and matches one of the type(s), return the token.
 // Otherwise, throw an error.
