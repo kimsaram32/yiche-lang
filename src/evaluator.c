@@ -40,7 +40,7 @@ typedef enum
 }
 function_type_t;
 
-// Accesses to 'args + i' with '0 <= i < builtin_params_length' is safe.
+// Invariant: accesses to 'args[i]' with '0 <= i < builtin_params_length' are valid.
 typedef evaluate_value_t (*builtin_function_t)(evaluate_context_t *ctx, evaluate_value_t *args);
 
 typedef struct
@@ -341,32 +341,32 @@ static void assert_argument_count_match(int expected, int passed, char *identifi
                        " but %d got passed", identifier, expected, passed);
 }
 
+// 'arguments + i' should be a valid reference to 'evaluate_value_t' for all 0
+// <= i < arguments_length (The same goes for 'call_runtime_function' and
+// 'call_function' below).
 static evaluate_value_t call_builtin_function(evaluate_context_t *ctx, symbol_table_entry_t *entry,
-                                              VECTOR_T(evaluate_value_t) *arguments)
+                                              evaluate_value_t *arguments, int arguments_length)
 {
-  evaluate_value_t *arguments_arr = VECTOR_ARR(arguments, evaluate_value_t);
-
   assert_argument_count_match(entry->data_function.builtin_parameters_length,
-                              arguments->length,
+                              arguments_length,
                               entry->symbol_identifier);
 
-  return entry->data_function.builtin_function(ctx, arguments_arr);
+  return entry->data_function.builtin_function(ctx, arguments);
 }
 
 static evaluate_value_t call_runtime_function(evaluate_context_t *ctx, ast_node_t *runtime_node,
-                                              VECTOR_T(evaluate_value_t) *arguments)
+                                              evaluate_value_t *arguments, int arguments_length)
 {
   ast_node_function_decl_t function_data = runtime_node->data_function_decl;
   ast_node_t **parameters_arr = VECTOR_ARR(function_data.parameters, ast_node_t*);
-  evaluate_value_t *arguments_arr = VECTOR_ARR(arguments, evaluate_value_t);
 
   assert_argument_count_match(function_data.parameters->length,
-                              arguments->length,
+                              arguments_length,
                               function_data.token_identifier->identifier);
 
   evaluate_context_enter_new_env(ctx, ctx->global_env);
 
-  for (int i = 0; i < arguments->length; i++)
+  for (int i = 0; i < arguments_length; i++)
   {
     char *param_identifier = parameters_arr[i]->data_variable_decl.token_identifier->identifier;
     // TODO: check data types when proper support is added
@@ -377,7 +377,7 @@ static evaluate_value_t call_runtime_function(evaluate_context_t *ctx, ast_node_
 
     symbol_table_entry->symbol_identifier = param_identifier;
     symbol_table_entry->symbol_type = SYMBOL_TYPE_VARIABLE;
-    symbol_table_entry->data_variable.value = arguments_arr[i];
+    symbol_table_entry->data_variable.value = arguments[i];
 
     evaluate_env_add_symbol_table_entry(ctx->current_env, symbol_table_entry);
   }
@@ -394,14 +394,14 @@ static evaluate_value_t call_runtime_function(evaluate_context_t *ctx, ast_node_
 }
 
 static evaluate_value_t call_function(evaluate_context_t *ctx, symbol_table_entry_t *entry,
-                                      VECTOR_T(evaluate_value_t) *arguments)
+                                      evaluate_value_t *arguments, int arguments_length)
 {
   switch (entry->data_function.type)
   {
     case FUNCTION_TYPE_BUILTIN:
-      return call_builtin_function(ctx, entry, arguments);
+      return call_builtin_function(ctx, entry, arguments, arguments_length);
     case FUNCTION_TYPE_RUNTIME:
-      return call_runtime_function(ctx, entry->data_function.runtime_node, arguments);
+      return call_runtime_function(ctx, entry->data_function.runtime_node, arguments, arguments_length);
   }
 }
 
@@ -559,19 +559,22 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
   symbol_table_entry_t *symbol_table_function_entry =
     evaluate_context_lookup_function(ctx, function_identifier);
 
-  VECTOR_T(evaluate_value_t) *argument_values = vector_create(sizeof(evaluate_value_t), 8);
   VECTOR_T(ast_node_t*) *argument_nodes = node->data_function_call_expr.arguments;
+  evaluate_value_t *argument_values = malloc(sizeof(evaluate_value_t) * argument_nodes->length);
+  if (argument_values == NULL)
+    exit_out_of_memory();
+
   for (int i = 0; i < argument_nodes->length; i++)
   {
     evaluate_value_t argument_value = evaluate_expr(ctx, VECTOR_ARR(argument_nodes, ast_node_t*)[i]);
-    if (!vector_append(argument_values, &argument_value))
-      exit_out_of_memory();
+    argument_values[i] = argument_value;
   }
 
   evaluate_value_t returned_value =
-    call_function(ctx, symbol_table_function_entry, argument_values);
+    call_function(ctx, symbol_table_function_entry, argument_values, argument_nodes->length);
 
-  vector_free(argument_values);
+  free(argument_values);
+
   return returned_value;
 }
 
@@ -722,10 +725,8 @@ static evaluate_value_t evaluate_program(ast_node_t *node)
   if (node_main_function_decl == NULL)
     exit_runtime_error("programs should have the main function");
 
-  VECTOR_T(evaluate_value_t) *arguments = vector_create(sizeof(evaluate_value_t), 8);
   // TODO: Add some arguments to main()
-  evaluate_value_t result = call_runtime_function(ctx, node_main_function_decl, arguments);
-  vector_free(arguments);
+  evaluate_value_t result = call_runtime_function(ctx, node_main_function_decl, NULL, 0);
 
   evaluate_context_free(ctx);
   return result;
