@@ -1,12 +1,4 @@
-#ifndef YICHE_COMMON_H
-#define YICHE_COMMON_H
-
-#define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
-
-#define UNREACHABLE __builtin_unreachable()
-#define NORETURN __attribute__((__noreturn__))
-
-#endif
+#include "common.h"
 
 #include "error.h"
 #include "hash_table.h"

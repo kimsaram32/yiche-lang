@@ -1,8 +1,6 @@
 #ifndef YICHE_HASH_TABLE_H
 #define YICHE_HASH_TABLE_H
 
-typedef void (*payload_destructor_t)(void *payload);
-
 typedef struct hash_table_t hash_table_t;
 
 // The macro 'HASH_TABLE_T(type)' denotes a hash table whose payload is a
@@ -12,10 +10,10 @@ typedef struct hash_table_t hash_table_t;
 // HASH_TABLE_T(symbol_table_entry_t) *symbol_table = hash_table_create(...);
 #define HASH_TABLE_T(type) hash_table_t
 
-// 'capacity' must be a prime number for efficient hashing.
-// 'payload_destructor' is called whenever a node gets freed in
-// 'hash_table_delete' or 'hash_table_free'.
-hash_table_t *hash_table_create(size_t capacity, payload_destructor_t payload_destructor);
+// 'capacity' must be a prime number for efficient hashing. 'payload_destructor'
+// is called whenever a node gets freed in 'hash_table_delete' or
+// 'hash_table_free', and it should deallocate the entire payload.
+hash_table_t *hash_table_create(size_t capacity, destructor_t payload_destructor);
 
 void hash_table_free(hash_table_t *table);
 

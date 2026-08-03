@@ -13,7 +13,7 @@ typedef struct hash_table_t
 {
   size_t capacity, size;
   hash_table_node_t **buckets;
-  payload_destructor_t payload_destructor;
+  destructor_t payload_destructor;
 }
 hash_table_t;
 
@@ -115,7 +115,7 @@ static int hash_table_resize(hash_table_t *table, size_t new_capacity)
   return 1;
 }
 
-hash_table_t *hash_table_create(size_t capacity, payload_destructor_t payload_destructor)
+hash_table_t *hash_table_create(size_t capacity, destructor_t payload_destructor)
 {
   if (capacity == 0)
     exit_with_error("hash_table_create(): 'capacity' must be a positive integer");

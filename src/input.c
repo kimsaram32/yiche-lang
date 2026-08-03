@@ -18,7 +18,7 @@ input_context_t *input_context_create(FILE *stream)
   if (ctx == NULL)
     return NULL;
 
-  ctx->buffer = vector_create(sizeof(input_char_t), 128);
+  ctx->buffer = vector_create(sizeof(input_char_t), 128, destructor_noop);
   if (ctx->buffer == NULL)
   {
     free(ctx);

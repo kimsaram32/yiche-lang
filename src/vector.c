@@ -2,7 +2,12 @@
 #include "string.h"
 #include "yiche.h"
 
-vector_t *vector_create(size_t element_size, int capacity)
+static void *vector_elt_p(vector_t *vector, int i)
+{
+  return ((unsigned char*)vector->arr) + vector->element_size * i;
+}
+
+vector_t *vector_create(size_t element_size, int capacity, destructor_t destructor)
 {
   if (element_size == 0)
     exit_with_error("vector_create(): 'element_size' must be a positive integer");
@@ -24,12 +29,16 @@ vector_t *vector_create(size_t element_size, int capacity)
   vector->element_size = element_size;
   vector->length = 0;
   vector->capacity = capacity;
+  vector->destructor = destructor;
 
   return vector;
 }
 
 void vector_free(vector_t *vector)
 {
+  for (int i = 0; i < vector->length; i++)
+    vector->destructor(vector_elt_p(vector, i));
+
   free(vector->arr);
   free(vector);
 }
@@ -48,7 +57,7 @@ int vector_append(vector_t *vector, void *elt)
     vector->arr = new;
   }
 
-  void *p = ((unsigned char*)vector->arr) + vector->element_size * vector->length++;
+  void *p = vector_elt_p(vector, vector->length++);
   memcpy(p, elt, vector->element_size);
 
   return 1;

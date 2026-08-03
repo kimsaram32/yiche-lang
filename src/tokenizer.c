@@ -257,11 +257,19 @@ static int read_character_constant(input_context_t *ctx)
   return val;
 }
 
+static void vector_token_free(void *p)
+{
+  token_t *token = p;
+
+  free(token->identifier);
+  free(token->lexeme);
+}
+
 void tokenize(FILE *stream)
 {
   input_context_t *ctx = input_context_create(stream);
 
-  if ((tokens = vector_create(sizeof(token_t), 64)) == NULL)
+  if ((tokens = vector_create(sizeof(token_t), 64, vector_token_free)) == NULL)
     exit_out_of_memory();
 
   char c, c2;

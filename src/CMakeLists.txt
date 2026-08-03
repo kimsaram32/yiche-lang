@@ -1,7 +1,8 @@
 add_library(yiche STATIC)
 target_sources(
   yiche
-  PRIVATE error.c
+  PRIVATE common.c
+          error.c
           vector.c
           hash_table.c
           character.c
