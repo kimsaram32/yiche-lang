@@ -26,11 +26,10 @@ input_char_t input_get_last_char(void)
 
 static void append_next_char_from_file(void)
 {
-  input_char_t *next = vector_next_element(input_buffer);
-  if (next == NULL)
-    exit_out_of_memory();
+  input_char_t next = file_next_char();
 
-  *next = file_next_char();
+  if (!vector_append(input_buffer, &next))
+    exit_out_of_memory();
 }
 
 char input_consume_char(void)

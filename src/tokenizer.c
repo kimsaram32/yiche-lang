@@ -288,10 +288,8 @@ void tokenize(void)
       }
     }
 
-    token_t *token = vector_next_element(tokens);
-    if (token == NULL)
-      exit_out_of_memory();
-    token->char_begin = input_get_last_char();
+    token_t token;
+    token.char_begin = input_get_last_char();
 
     if (is_letter(c))
     {
@@ -302,32 +300,36 @@ void tokenize(void)
       int keyword_type = string_to_keyword(keyword_or_identifier);
       if (keyword_type == -1)
       {
-        token->type = TOKEN_IDENTIFIER;
-        token->identifier = keyword_or_identifier;
+        token.type = TOKEN_IDENTIFIER;
+        token.identifier = keyword_or_identifier;
       }
       else
       {
         free(keyword_or_identifier);
-        token->type = keyword_type;
+        token.type = keyword_type;
       }
     }
     else if (is_digit(c))
     {
-      token->type = TOKEN_CONSTANT;
-      token->constant = read_numeric_constant(c);
+      token.type = TOKEN_CONSTANT;
+      token.constant = read_numeric_constant(c);
     }
     else if (c == '\'')
     {
-      token->type = TOKEN_CONSTANT;
-      token->constant = read_character_constant();
+      token.type = TOKEN_CONSTANT;
+      token.constant = read_character_constant();
     }
     else
-      token->type = read_symbol(c);
+      token.type = read_symbol(c);
 
-    token->char_end = input_get_last_char();
+    token.char_end = input_get_last_char();
 
-    if ((token->lexeme = input_get_and_clear_buffer()) == NULL)
+    if ((token.lexeme = input_get_and_clear_buffer()) == NULL)
       exit_out_of_memory();
+
+    if (!vector_append(tokens, &token))
+      exit_out_of_memory();
+
     continue;
 
     skip: free(input_get_and_clear_buffer());

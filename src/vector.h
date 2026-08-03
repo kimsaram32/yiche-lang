@@ -9,8 +9,11 @@ typedef struct
 }
 vector_t;
 
-// To promote clarity, the macro 'VECTOR_T(type)' is preferred in type specifiers
-// whenever possible.
+// The macro 'VECTOR_T(type)' denotes a vector with element type of 'type'. The
+// size of an element of such vector must equal to 'sizeof(type)'.
+//
+// To promote clarity, this macro is preferred in type specifiers whenever
+// possible.
 //
 // Example usage:
 // VECTOR_T(token_t) *tokens = vector_create(sizeof(token_t), CAPACITY);
@@ -22,17 +25,12 @@ void vector_free(vector_t *vector);
 
 #define VECTOR_ARR(vector, type) ((type*)(vector)->arr)
 
-// Increment the vector's length by 1, and return the pointer to the last
-// element.
+// Increment the vector's length by 1, and copy 'vector->element_size' bytes
+// from 'elt' to the last element. On success, '1' is returned. If an
+// out-of-memory error occurs, '0' is returned instead.
 //
 // Previously obtained pointers to elements may become invalid after the
 // function returns.
-void *vector_next_element(vector_t *vector);
-
-// Convenience functions for pointer element types.
-
-VECTOR_T(void*) *vector_pointer_create(int capacity);
-
-int vector_pointer_append(VECTOR_T(void*) *vector, void *elt);
+int vector_append(vector_t *vector, void *elt);
 
 #endif

@@ -564,8 +564,8 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
   for (int i = 0; i < argument_nodes->length; i++)
   {
     evaluate_value_t argument_value = evaluate_expr(ctx, VECTOR_ARR(argument_nodes, ast_node_t*)[i]);
-    evaluate_value_t *argument_value_elt = vector_next_element(argument_values);
-    memcpy(argument_value_elt, &argument_value, sizeof(evaluate_value_t));
+    if (!vector_append(argument_values, &argument_value))
+      exit_out_of_memory();
   }
 
   evaluate_value_t returned_value =

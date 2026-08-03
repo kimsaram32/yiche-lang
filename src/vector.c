@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include "string.h"
 #include "yiche.h"
 
 vector_t *vector_create(size_t element_size, int capacity)
@@ -33,7 +34,7 @@ void vector_free(vector_t *vector)
   free(vector);
 }
 
-void *vector_next_element(vector_t *vector)
+int vector_append(vector_t *vector, void *elt)
 {
   if (vector->length == vector->capacity)
   {
@@ -41,26 +42,14 @@ void *vector_next_element(vector_t *vector)
 
     void *new = realloc(vector->arr, vector->element_size * new_capacity);
     if (new == NULL)
-      return NULL;
+      return 0;
 
     vector->capacity = new_capacity;
     vector->arr = new;
   }
 
-  return ((unsigned char*)vector->arr) + vector->element_size * vector->length++;
-}
+  void *p = ((unsigned char*)vector->arr) + vector->element_size * vector->length++;
+  memcpy(p, elt, vector->element_size);
 
-VECTOR_T(void*) *vector_pointer_create(int capacity)
-{
-  return vector_create(sizeof(void*), capacity);
-}
-
-int vector_pointer_append(VECTOR_T(void*) *vector, void *elt)
-{
-  void **p = vector_next_element(vector);
-  if (p == NULL)
-    return 0;
-
-  *p = elt;
   return 1;
 }

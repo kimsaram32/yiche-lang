@@ -198,7 +198,7 @@ ast_node_t *ast_node_function_call_expr_create(token_t *token_callee)
   ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_CALL_EXPR);
 
   node->data_function_call_expr.token_callee = token_callee;
-  node->data_function_call_expr.arguments = vector_pointer_create(8);
+  node->data_function_call_expr.arguments = vector_create(sizeof(void*), 8);
   if (node->data_function_call_expr.arguments == NULL)
     exit_out_of_memory();
 
@@ -207,7 +207,7 @@ ast_node_t *ast_node_function_call_expr_create(token_t *token_callee)
 
 void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg)
 {
-  if (!vector_pointer_append(node->data_function_call_expr.arguments, arg))
+  if (!vector_append(node->data_function_call_expr.arguments, &arg))
     exit_out_of_memory();
 }
 
@@ -226,7 +226,7 @@ ast_node_t *ast_node_stmt_list_create(void)
 {
   ast_node_t *node = ast_node_create(AST_NODE_STMT_LIST);
 
-  node->data_stmt_list.stmts = vector_pointer_create(8);
+  node->data_stmt_list.stmts = vector_create(sizeof(void*), 8);
   if (node->data_stmt_list.stmts == NULL)
     exit_out_of_memory();
 
@@ -235,7 +235,7 @@ ast_node_t *ast_node_stmt_list_create(void)
 
 void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt)
 {
-  if (!vector_pointer_append(node->data_stmt_list.stmts, stmt))
+  if (!vector_append(node->data_stmt_list.stmts, &stmt))
     exit_out_of_memory();
 }
 
@@ -360,7 +360,7 @@ ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
   ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_DECL);
 
   node->data_function_decl.token_identifier = token_identifier;
-  node->data_function_decl.parameters = vector_pointer_create(8);
+  node->data_function_decl.parameters = vector_create(sizeof(void*), 8);
   if (node->data_function_decl.parameters == NULL)
     exit_out_of_memory();
 
@@ -369,7 +369,7 @@ ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
 
 void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter)
 {
-  if (!vector_pointer_append(node->data_function_decl.parameters, parameter))
+  if (!vector_append(node->data_function_decl.parameters, &parameter))
     exit_out_of_memory();
 }
 
@@ -391,7 +391,7 @@ ast_node_t *ast_node_program_create(void)
 {
   ast_node_t *node = ast_node_create(AST_NODE_PROGRAM);
 
-  node->data_program.decls = vector_pointer_create(8);
+  node->data_program.decls = vector_create(sizeof(void*), 8);
   if (node->data_program.decls == NULL)
     exit_out_of_memory();
 
@@ -400,7 +400,7 @@ ast_node_t *ast_node_program_create(void)
 
 void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl)
 {
-  if (!vector_pointer_append(node->data_program.decls, decl))
+  if (!vector_append(node->data_program.decls, &decl))
     exit_out_of_memory();
 }
 
