@@ -1,10 +1,19 @@
 #ifndef YICHE_COMMON_H
 #define YICHE_COMMON_H
 
-#define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
+#if defined(__GNUC__) || defined(__clang__)
+  #define UNREACHABLE (__builtin_unreachable())
+#elif defined(_MSC_VER)
+  #define UNREACHABLE (__assume(false))
+#endif
 
-#define UNREACHABLE __builtin_unreachable()
-#define NORETURN __attribute__((__noreturn__))
+#if defined(__GNUC__) || defined(__clang__)
+  #define NORETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+  #define NORETURN __declspec(noreturn)
+#endif
+
+#define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 typedef void (*destructor_t)(void *p);
 
