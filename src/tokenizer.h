@@ -108,13 +108,13 @@ void tokenizer_print_error(tokenizer_context_t *tokenizer, tokenizer_result_t re
 //
 // Otherwise, the internal array and the stream is partially filled and read,
 // and an error code is returned.
-tokenizer_result_t tokenize(tokenizer_context_t *tokenizer);
+tokenizer_result_t tokenizer_process(tokenizer_context_t *tokenizer);
 
 /*
- * The functions below must be used after 'tokenize()' is called with 'tokenizer'.
+ * The functions below must be used after 'tokenizer_process()' is called with 'tokenizer'.
  */
 
-void tokens_print(tokenizer_context_t *tokenizer);
+void tokenizer_print_tokens(tokenizer_context_t *tokenizer);
 
 token_t *token_consume(tokenizer_context_t *tokenizer);
 token_t *token_peek(tokenizer_context_t *tokenizer, int n);

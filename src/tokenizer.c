@@ -411,7 +411,7 @@ static tokenizer_result_t read_character_constant(tokenizer_context_t *ctx, int 
   return TOKENIZER_SUCCESS;
 }
 
-tokenizer_result_t tokenize(tokenizer_context_t *ctx)
+tokenizer_result_t tokenizer_process(tokenizer_context_t *ctx)
 {
   tokenizer_result_t result;
   char c, c2;
@@ -596,7 +596,7 @@ static char *symbol_to_string(token_type_t symbol_type)
   }
 }
 
-void tokens_print(tokenizer_context_t *ctx)
+void tokenizer_print_tokens(tokenizer_context_t *ctx)
 {
   token_t *tokens_arr = VECTOR_ARR(ctx->tokens, token_t);
 

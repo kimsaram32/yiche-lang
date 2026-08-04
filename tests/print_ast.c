@@ -7,7 +7,7 @@ int main(void)
   if (tokenizer == NULL)
     exit_out_of_memory();
 
-  if (tokenize(tokenizer) != TOKENIZER_SUCCESS)
+  if (tokenizer_process(tokenizer) != TOKENIZER_SUCCESS)
     exit(EXIT_FAILURE);
 
   ast_node_t *root = parse(tokenizer);
