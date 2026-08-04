@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "yiche.h"
 
 int main(void)
@@ -6,7 +7,8 @@ int main(void)
   if (tokenizer == NULL)
     exit_out_of_memory();
 
-  tokenize(tokenizer);
+  if (tokenize(tokenizer) != TOKENIZER_SUCCESS)
+    exit(EXIT_FAILURE);
   ast_node_t *root = parse(tokenizer);
 
   evaluate_value_t result = evaluate(root);

@@ -3,6 +3,14 @@
 
 #include <stdio.h>
 
+typedef enum
+{
+  INPUT_SUCCESS = 0,
+  INPUT_OOM,
+  INPUT_NO_LAST_READ,
+}
+input_result_t;
+
 typedef struct input_context_t input_context_t;
 
 typedef struct
@@ -24,12 +32,12 @@ void input_context_free(input_context_t *ctx);
 // everywhere would make the code verbose. Therefore, I separated the function for
 // retrieving the full information.
 
-input_char_t input_get_last_char(input_context_t *ctx);
-char input_consume_char(input_context_t *ctx);
-char input_peek_char(input_context_t *ctx, int n);
+input_result_t input_get_last_char(input_context_t *ctx, input_char_t *input_char);
+input_result_t input_consume_char(input_context_t *ctx, char *c);
+input_result_t input_peek_char(input_context_t *ctx, char *c, int n);
 
-// the buffer changes as input_consume_char() is called. return the
-// accumulated string and clear the buffer.
+// the buffer changes as input_consume_char() is called. return the accumulated
+// string and clear the buffer. Return NULL if an out-of-memory error occurs.
 char *input_get_and_clear_buffer(input_context_t *ctx);
 
 #endif

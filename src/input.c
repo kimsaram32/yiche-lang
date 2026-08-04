@@ -37,31 +37,40 @@ void input_context_free(input_context_t *ctx)
   free(ctx);
 }
 
-input_char_t input_get_last_char(input_context_t *ctx)
+input_result_t input_get_last_char(input_context_t *ctx, input_char_t *input_char)
 {
   if (ctx->next_index == 0)
-    exit_with_error("input_get_last_char(): no last read character");
+    return INPUT_NO_LAST_READ;
 
-  return VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index - 1];
+  *input_char = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index - 1];
+  return INPUT_SUCCESS;
 }
 
-static void append_next_char_from_file(input_context_t *ctx)
+static int append_next_char_from_file(input_context_t *ctx)
 {
   input_char_t next = file_next_char(ctx->stream);
 
   if (!vector_append(ctx->buffer, &next))
-    exit_out_of_memory();
+    return 0;
+
+  return 1;
 }
 
-char input_consume_char(input_context_t *ctx)
+input_result_t input_consume_char(input_context_t *ctx, char *c)
 {
   if (ctx->next_index == ctx->buffer->length)
-    append_next_char_from_file(ctx);
+    if (!append_next_char_from_file(ctx))
+      return INPUT_OOM;
 
-  return VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index++].c;
+  if (c != NULL)
+    *c = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index].c;
+
+  ctx->next_index++;
+
+  return INPUT_SUCCESS;
 }
 
-char input_peek_char(input_context_t *ctx, int n)
+input_result_t input_peek_char(input_context_t *ctx, char *c, int n)
 {
   if (n <= 0)
     exit_with_error("input_peek_char(): 'n' must be a positive integer");
@@ -69,9 +78,11 @@ char input_peek_char(input_context_t *ctx, int n)
   int peeking = ctx->next_index + n - 1;
 
   while (peeking >= ctx->buffer->length)
-    append_next_char_from_file(ctx);
+    if (!append_next_char_from_file(ctx))
+      return INPUT_OOM;
 
-  return VECTOR_ARR(ctx->buffer, input_char_t)[peeking].c;
+  *c = VECTOR_ARR(ctx->buffer, input_char_t)[peeking].c;
+  return INPUT_SUCCESS;
 }
 
 char *input_get_and_clear_buffer(input_context_t *ctx)

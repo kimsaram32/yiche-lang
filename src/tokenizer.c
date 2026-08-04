@@ -16,7 +16,8 @@ static void vector_token_free(void *p)
 {
   token_t *token = p;
 
-  free(token->identifier);
+  if (token->identifier != NULL)
+    free(token->identifier);
   free(token->lexeme);
 }
 
@@ -51,24 +52,88 @@ void tokenizer_context_free(tokenizer_context_t *ctx)
   free(ctx);
 }
 
+void tokenizer_print_error(tokenizer_context_t *ctx, tokenizer_result_t result)
+{
+  if (result == TOKENIZER_SUCCESS)
+    return;
+
+  if (result == TOKENIZER_OOM)
+  {
+    fprintf(stdout, "out of memory");
+    return;
+  }
+
+  char *s;
+  switch (result)
+  {
+    case TOKENIZER_COMMENT_MULTI_UNCLOSED:
+      s = "unclosed multi-line comment";
+      break;
+    case TOKENIZER_SYMBOL_INVALID:
+      s = "invalid symbol";
+      break;
+    case TOKENIZER_CHARACTER_CONSTANT_EMPTY:
+      s = "empty character constant '' not allowed";
+      break;
+    case TOKENIZER_CHARACTER_CONSTANT_INVALID_ESCAPE:
+      s = "invalid escape sequence";
+      break;
+    case TOKENIZER_CHARACTER_CONSTANT_INVALID:
+      s = "invalid character constant sequence";
+      break;
+    default:
+      UNREACHABLE;
+  }
+
+  input_char_t last_char;
+  if (input_get_last_char(ctx->input_ctx, &last_char) != INPUT_SUCCESS)
+    return;
+
+  fprintf(stdout, "lexical error at line %d, column %d ('%c'):\n%s",
+          last_char.line, last_char.column, last_char.c, s);
+}
+
+/*
+ * Helpers
+ */
+
+#define PEEK(ctx, c, n) do \
+  { \
+    if (input_peek_char((ctx)->input_ctx, (c), (n)) != INPUT_SUCCESS) \
+      return TOKENIZER_OOM; \
+  } \
+  while (0)
+
+#define CONSUME(ctx, c) do \
+  { \
+    if (input_consume_char((ctx)->input_ctx, (c)) != INPUT_SUCCESS) \
+      return TOKENIZER_OOM; \
+  } \
+  while (0)
+
 /*
  * Tokenizing
  */
 
-static void skip_multi_line_comment(tokenizer_context_t *ctx)
+static tokenizer_result_t skip_multi_line_comment(tokenizer_context_t *ctx)
 {
   char c;
   int can_exit = 0;
 
-  while ((c = input_consume_char(ctx->input_ctx)) != 0)
+  while (1)
   {
+    CONSUME(ctx, &c);
+
+    if (c == 0)
+      break;
+
     if (c == '*')
       can_exit = 1;
     else if (c == '/' && can_exit)
-      return;
+      return TOKENIZER_SUCCESS;
   }
 
-  exit_lexical_error(ctx->input_ctx, "unclosed multi-line comment");
+  return TOKENIZER_COMMENT_MULTI_UNCLOSED;
 }
 
 static int string_to_keyword(char *s)
@@ -90,19 +155,33 @@ static int string_to_keyword(char *s)
 }
 
 // TODO: Isn't the buffer a duplication of lexeme?
-static char *read_keyword_or_identifier(tokenizer_context_t *ctx, char initial)
+static tokenizer_result_t read_keyword_or_identifier(tokenizer_context_t *ctx, char **buf_p, char initial)
 {
-  char *buf;
   int buf_capacity = 8, i = 1;
+  char *buf;
 
   if ((buf = malloc(sizeof(char) * buf_capacity)) == NULL)
-    return NULL;
+    return TOKENIZER_OOM;
 
   buf[0] = initial;
 
-  while (is_letter((buf[i] = input_peek_char(ctx->input_ctx, 1))) || is_digit(buf[i]))
+  while (1)
   {
-    input_consume_char(ctx->input_ctx);
+    if (input_peek_char(ctx->input_ctx, buf + i, 1) != INPUT_SUCCESS)
+    {
+      free(buf);
+      return TOKENIZER_OOM;
+    }
+
+    if (!is_letter(buf[i]) && !is_digit(buf[i]))
+      break;
+
+    if (input_consume_char(ctx->input_ctx, NULL) != INPUT_SUCCESS)
+    {
+      free(buf);
+      return TOKENIZER_OOM;
+    }
+
     if (++i == buf_capacity)
     {
       buf_capacity *= 2;
@@ -110,14 +189,15 @@ static char *read_keyword_or_identifier(tokenizer_context_t *ctx, char initial)
       if ((buf = realloc(buf, sizeof(char) * buf_capacity)) == NULL)
       {
         free(old);
-        return NULL;
+        return TOKENIZER_OOM;
       }
     }
   }
 
   buf[i] = '\0';
 
-  return buf;
+  *buf_p = buf;
+  return TOKENIZER_SUCCESS;
 }
 
 // returns a symbol token_type_t or -1.
@@ -185,26 +265,31 @@ static int get_symbol_2(char c1, char c2)
     return -1;
 }
 
-// returns a symbol type.
-static token_type_t read_symbol(tokenizer_context_t *ctx, char c1)
+// On success, '*type_p' is set to a symbol type.
+static tokenizer_result_t read_symbol(tokenizer_context_t *ctx, token_type_t *type_p, char c1)
 {
   char c2;
   int type;
 
-  if ((c2 = input_peek_char(ctx->input_ctx, 1)) != 0)
+  PEEK(ctx, &c2, 1);
+
+  if (c2 != 0)
   {
     type = get_symbol_2(c1, c2);
     if (type != -1)
     {
-      input_consume_char(ctx->input_ctx);
-      return type;
+      CONSUME(ctx, NULL);
+
+      *type_p = type;
+      return TOKENIZER_SUCCESS;
     }
   }
 
   if ((type = get_symbol_1(c1)) == -1)
-    exit_lexical_error(ctx->input_ctx, "invalid symbol");
+    return TOKENIZER_SYMBOL_INVALID;
 
-  return type;
+  *type_p = type;
+  return TOKENIZER_SUCCESS;
 }
 
 static int is_hexadecimal_digit(char c)
@@ -212,42 +297,59 @@ static int is_hexadecimal_digit(char c)
   return is_digit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
 }
 
-static int read_numeric_constant(tokenizer_context_t *ctx, char initial)
+static tokenizer_result_t read_numeric_constant(tokenizer_context_t *ctx, int *val, char initial)
 {
-  char c;
-  int val = 0;
+  char c, c2;
+  *val = 0;
 
   if (initial >= '1' && initial <= '9')
   {
     // decimal constant greater than 0
-    val = val * 10 + initial - '0';
+    *val = *val * 10 + initial - '0';
 
-    while (is_digit((c = input_peek_char(ctx->input_ctx, 1))))
+    while (1)
     {
-      input_consume_char(ctx->input_ctx);
-      val = val * 10 + c - '0';
+      PEEK(ctx, &c, 1);
+
+      if (!is_digit(c))
+        break;
+
+      CONSUME(ctx, NULL);
+
+      *val = *val * 10 + c - '0';
     }
   }
-  else if (((c = input_peek_char(ctx->input_ctx, 1)) == 'x' || c == 'X') &&
-           is_hexadecimal_digit(input_peek_char(ctx->input_ctx, 2)))
+  else
   {
-    // hexadecimal constant
-    input_consume_char(ctx->input_ctx);
-    while (is_hexadecimal_digit((c = input_peek_char(ctx->input_ctx, 1))))
+    PEEK(ctx, &c, 1);
+    PEEK(ctx, &c2, 2);
+
+    if ((c == 'x' || c == 'X') && is_hexadecimal_digit(c2))
     {
-      input_consume_char(ctx->input_ctx);
+      // hexadecimal constant
+      CONSUME(ctx, NULL);
 
-      val *= 16;
-      if (c >= 'a')
-        val += c - 'a' + 10;
-      else if (c >= 'A')
-        val += c - 'A' + 10;
-      else
-        val += c - '0';
-    }
-  } // else: decimal constant zero
+      while (1)
+      {
+        PEEK(ctx, &c, 1);
 
-  return val;
+        if (!is_hexadecimal_digit(c))
+          break;
+
+        CONSUME(ctx, NULL);
+
+        *val *= 16;
+        if (c >= 'a')
+          *val += c - 'a' + 10;
+        else if (c >= 'A')
+          *val += c - 'A' + 10;
+        else
+          *val += c - '0';
+      }
+    } // else: decimal constant zero
+  }
+
+  return TOKENIZER_SUCCESS;
 }
 
 static int get_escape_character_value(char c)
@@ -280,104 +382,136 @@ static int get_escape_character_value(char c)
   }
 }
 
-static int read_character_constant(tokenizer_context_t *ctx)
+static tokenizer_result_t read_character_constant(tokenizer_context_t *ctx, int *val)
 {
-  char c = input_consume_char(ctx->input_ctx);
-  int val;
+  char c;
+
+  CONSUME(ctx, &c);
 
   if (c == '\'')
-    exit_lexical_error(ctx->input_ctx, "empty character constant '' not allowed");
+    return TOKENIZER_CHARACTER_CONSTANT_EMPTY;
   else if (c == '\\')
   {
-    if ((val = get_escape_character_value(input_consume_char(ctx->input_ctx))) == -1)
-      exit_lexical_error(ctx->input_ctx, "invalid escape sequence");
+    CONSUME(ctx, &c);
+
+    *val = get_escape_character_value(c);
+    if (*val == -1)
+      return TOKENIZER_CHARACTER_CONSTANT_INVALID_ESCAPE;
   }
   else if (is_visible_character(c) || c == ' ' || c == '\t')
-    val = c;
+    *val = c;
   else
-    exit_lexical_error(ctx->input_ctx, "invalid character constant sequence");
+    return TOKENIZER_CHARACTER_CONSTANT_INVALID;
 
-  if (input_consume_char(ctx->input_ctx) != '\'')
-    exit_lexical_error(ctx->input_ctx, "invalid character constant sequence");
+  CONSUME(ctx, &c);
 
-  return val;
+  if (c != '\'')
+    return TOKENIZER_CHARACTER_CONSTANT_INVALID;
+
+  return TOKENIZER_SUCCESS;
 }
 
-void tokenize(tokenizer_context_t *ctx)
+tokenizer_result_t tokenize(tokenizer_context_t *ctx)
 {
+  tokenizer_result_t result;
   char c, c2;
 
-  while ((c = input_consume_char(ctx->input_ctx)) != 0)
+  while (1)
   {
+    CONSUME(ctx, &c);
+
+    if (c == 0)
+      break;
+
     if (is_whitespace(c))
       goto skip;
 
     if (c == '/')
     {
-      c2 = input_peek_char(ctx->input_ctx, 1);
+      PEEK(ctx, &c2, 1);
 
       if (c2 == '/')
       {
         // technically '\n' is not part of <single_line_comment>, but it'll get
         // skipped anyway, so do not input_unget_char(ctx->input_ctx) it
-        while ((c = input_consume_char(ctx->input_ctx)) != 0 && c != '\n');
+        do
+          CONSUME(ctx, &c);
+        while (c != 0 && c != '\n');
 
         goto skip;
       }
       else if (c2 == '*')
       {
-        input_consume_char(ctx->input_ctx);
-        skip_multi_line_comment(ctx);
+        CONSUME(ctx, NULL);
+        if ((result = skip_multi_line_comment(ctx)) != TOKENIZER_SUCCESS)
+          return result;
         goto skip;
       }
     }
 
     token_t token;
-    token.char_begin = input_get_last_char(ctx->input_ctx);
+    token.identifier = NULL;
+    // Never fails
+    input_get_last_char(ctx->input_ctx, &token.char_begin);
 
     if (is_letter(c))
     {
-      char *keyword_or_identifier = read_keyword_or_identifier(ctx, c);
-      if (keyword_or_identifier == NULL)
-        exit_out_of_memory();
+      char *string_or_identifier;
+      if ((result = read_keyword_or_identifier(ctx, &string_or_identifier, c))
+          != TOKENIZER_SUCCESS)
+        return result;
 
-      int keyword_type = string_to_keyword(keyword_or_identifier);
+      int keyword_type = string_to_keyword(string_or_identifier);
       if (keyword_type == -1)
       {
+        token.identifier = string_or_identifier;
         token.type = TOKEN_IDENTIFIER;
-        token.identifier = keyword_or_identifier;
       }
       else
       {
-        free(keyword_or_identifier);
+        free(string_or_identifier);
         token.type = keyword_type;
       }
     }
     else if (is_digit(c))
     {
       token.type = TOKEN_CONSTANT;
-      token.constant = read_numeric_constant(ctx, c);
+      if ((result = read_numeric_constant(ctx, &token.constant, c)) != TOKENIZER_SUCCESS)
+        return result;
     }
     else if (c == '\'')
     {
       token.type = TOKEN_CONSTANT;
-      token.constant = read_character_constant(ctx);
+      if ((result = read_character_constant(ctx, &token.constant)) != TOKENIZER_SUCCESS)
+        return result;
     }
     else
-      token.type = read_symbol(ctx, c);
+      if ((result = read_symbol(ctx, &token.type, c)) != TOKENIZER_SUCCESS)
+        return result;
 
-    token.char_end = input_get_last_char(ctx->input_ctx);
+    // Never fails
+    input_get_last_char(ctx->input_ctx, &token.char_end);
 
     if ((token.lexeme = input_get_and_clear_buffer(ctx->input_ctx)) == NULL)
-      exit_out_of_memory();
+    {
+      if (token.identifier != NULL)
+        free(token.identifier);
+      return TOKENIZER_OOM;
+    }
 
     if (!vector_append(ctx->tokens, &token))
-      exit_out_of_memory();
+    {
+      if (token.identifier != NULL)
+        free(token.identifier);
+      return TOKENIZER_OOM;
+    }
 
     continue;
 
     skip: free(input_get_and_clear_buffer(ctx->input_ctx));
   }
+
+  return TOKENIZER_SUCCESS;
 }
 
 /*

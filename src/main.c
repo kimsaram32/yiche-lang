@@ -11,7 +11,12 @@ int main(void)
   if (tokenizer == NULL)
     exit_out_of_memory();
 
-  tokenize(tokenizer);
+  tokenizer_result_t tokenizer_result = tokenize(tokenizer);
+  if (tokenizer_result != TOKENIZER_SUCCESS)
+  {
+    tokenizer_print_error(tokenizer, tokenizer_result);
+    exit(EXIT_FAILURE);
+  }
   tokens_print(tokenizer);
 
   printf("PARSING\n");
@@ -19,8 +24,8 @@ int main(void)
   ast_node_print(root);
 
   printf("EVALUATING\n");
-  evaluate_value_t result = evaluate(root);
-  printf("returned %d\n", result.value_int);
+  evaluate_value_t evaluator_result = evaluate(root);
+  printf("returned %d\n", evaluator_result.value_int);
 
   tokenizer_context_free(tokenizer);
 

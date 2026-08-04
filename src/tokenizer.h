@@ -72,7 +72,23 @@ typedef struct
 }
 token_t;
 
+typedef enum
+{
+  TOKENIZER_SUCCESS = 0,
+  TOKENIZER_OOM,
+
+  // Lexical errors
+  TOKENIZER_LEXICAL_ERROR_START,
+  TOKENIZER_COMMENT_MULTI_UNCLOSED,
+  TOKENIZER_SYMBOL_INVALID,
+  TOKENIZER_CHARACTER_CONSTANT_EMPTY,
+  TOKENIZER_CHARACTER_CONSTANT_INVALID_ESCAPE,
+  TOKENIZER_CHARACTER_CONSTANT_INVALID,
+}
+tokenizer_result_t;
+
 // Internally, name it as 'ctx'. External users should name it as 'tokenizer'.
+//
 // TODO: I don't think I like this... but naming it 'tokenizer' makes the code
 // less readable in internal usage.
 typedef struct tokenizer_context_t tokenizer_context_t;
@@ -80,18 +96,31 @@ typedef struct tokenizer_context_t tokenizer_context_t;
 tokenizer_context_t *tokenizer_context_create(FILE *stream);
 void tokenizer_context_free(tokenizer_context_t *tokenizer);
 
-// Appends tokens to the internal array, reading the stream til the end.
-void tokenize(tokenizer_context_t *tokenizer);
+// Print 'result', an error, to stdout. If 'result' is not an error code, do
+// nothing. NOTE: Will be moved once the test code does not depend on the
+// formatting of error messages.
+void tokenizer_print_error(tokenizer_context_t *tokenizer, tokenizer_result_t result);
 
-// The functions below must be used after 'tokenize()' is called with 'tokenizer'.
+// Append tokens to the internal array, reading the stream til the end.
+//
+// On success, the internal array is filled with the tokens, the stream is fully
+// read, and 'TOKENIZER_SUCCESS' is returned.
+//
+// Otherwise, the internal array and the stream is partially filled and read,
+// and an error code is returned.
+tokenizer_result_t tokenize(tokenizer_context_t *tokenizer);
+
+/*
+ * The functions below must be used after 'tokenize()' is called with 'tokenizer'.
+ */
 
 void tokens_print(tokenizer_context_t *tokenizer);
 
 token_t *token_consume(tokenizer_context_t *tokenizer);
 token_t *token_peek(tokenizer_context_t *tokenizer, int n);
 
-// If 'token' is non-NULL and matches one of the type(s), return the token.
-// Otherwise, throw an error.
+// Return 'token' if it is non-NULL and matches one of the type(s). Otherwise,
+// throw an error.
 
 token_t *token_assert(token_t *token, token_type_t t1);
 token_t *token_assert2(token_t *token, token_type_t t1, token_type_t t2);
@@ -100,8 +129,8 @@ token_t *token_assert3(token_t *token, token_type_t t1, token_type_t t2,
 token_t *token_assert4(token_t *token, token_type_t t1, token_type_t t2,
                        token_type_t t3, token_type_t t4);
 
-// If 'token' is non-NULL and matches one of the type(s), return the token.
-// otherwise, return NULL.
+// Return 'token' if it is non-NULL and matches one of the type(s). Otherwise,
+// return NULL.
 
 token_t *token_check(token_t *token, token_type_t t1);
 token_t *token_check2(token_t *token, token_type_t t1, token_type_t t2);

@@ -11,7 +11,6 @@
 
 NORETURN void exit_out_of_memory(void);
 
-NORETURN void exit_lexical_error(input_context_t *ctx, char *s);
 NORETURN void exit_parsing_error_unexpected_token(token_t *token);
 NORETURN void exit_parsing_error_no_tokens(void);
 
