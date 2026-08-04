@@ -5,8 +5,11 @@
 typedef struct input_context_t
 {
   FILE *stream;
+  // The last character read in the stream.
+  input_char_t stream_last_char;
+
   VECTOR_T(input_char_t) *buffer;
-  int next_index;
+  int buffer_next_index;
 }
 input_context_t;
 
@@ -26,7 +29,11 @@ input_context_t *input_context_create(FILE *stream)
   }
 
   ctx->stream = stream;
-  ctx->next_index = 0;
+  ctx->stream_last_char = (input_char_t){
+    .c = 0, .line = 1, .column = 0, // sentinel
+  };
+
+  ctx->buffer_next_index = 0;
 
   return ctx;
 }
@@ -39,33 +46,51 @@ void input_context_free(input_context_t *ctx)
 
 input_result_t input_get_last_char(input_context_t *ctx, input_char_t *input_char)
 {
-  if (ctx->next_index == 0)
+  if (ctx->buffer_next_index == 0)
     return INPUT_NO_LAST_READ;
 
-  *input_char = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index - 1];
+  *input_char = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->buffer_next_index - 1];
   return INPUT_SUCCESS;
 }
 
-static int append_next_char_from_file(input_context_t *ctx)
+// Get the next valid character (according to 'is_character()') or an EOF from
+// the stream, with the line/column information.
+static input_char_t input_next_valid_char_from_stream(input_context_t *ctx)
 {
-  input_char_t next = file_next_char(ctx->stream);
+  int c = ctx->stream_last_char.c;
 
-  if (!vector_append(ctx->buffer, &next))
-    return 0;
+  do
+  {
+    if (c == '\n')
+    {
+      ctx->stream_last_char.line++;
+      ctx->stream_last_char.column = 1;
+    }
+    else
+      ctx->stream_last_char.column++;
 
-  return 1;
+    c = fgetc(ctx->stream);
+  }
+  while (c != EOF && !is_character(c));
+
+  ctx->stream_last_char.c = c == EOF ? 0 : c;
+
+  return ctx->stream_last_char;
 }
 
 input_result_t input_consume_char(input_context_t *ctx, char *c)
 {
-  if (ctx->next_index == ctx->buffer->length)
-    if (!append_next_char_from_file(ctx))
+  if (ctx->buffer_next_index == ctx->buffer->length)
+  {
+    input_char_t next_char = input_next_valid_char_from_stream(ctx);
+    if (!vector_append(ctx->buffer, &next_char))
       return INPUT_OOM;
+  }
 
   if (c != NULL)
-    *c = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->next_index].c;
+    *c = VECTOR_ARR(ctx->buffer, input_char_t)[ctx->buffer_next_index].c;
 
-  ctx->next_index++;
+  ctx->buffer_next_index++;
 
   return INPUT_SUCCESS;
 }
@@ -75,11 +100,14 @@ input_result_t input_peek_char(input_context_t *ctx, char *c, int n)
   if (n <= 0)
     exit_with_error("input_peek_char(): 'n' must be a positive integer");
 
-  int peeking = ctx->next_index + n - 1;
+  int peeking = ctx->buffer_next_index + n - 1;
 
   while (peeking >= ctx->buffer->length)
-    if (!append_next_char_from_file(ctx))
+  {
+    input_char_t next_char = input_next_valid_char_from_stream(ctx);
+    if (!vector_append(ctx->buffer, &next_char))
       return INPUT_OOM;
+  }
 
   *c = VECTOR_ARR(ctx->buffer, input_char_t)[peeking].c;
   return INPUT_SUCCESS;
@@ -88,48 +116,21 @@ input_result_t input_peek_char(input_context_t *ctx, char *c, int n)
 char *input_get_and_clear_buffer(input_context_t *ctx)
 {
   int i;
-  char *buf = malloc(sizeof(char) * (ctx->next_index + 1));
+  char *buf = malloc(sizeof(char) * (ctx->buffer_next_index + 1));
   if (buf == NULL)
     return NULL;
 
   input_char_t *input_buffer_arr = VECTOR_ARR(ctx->buffer, input_char_t);
 
-  for (i = 0; i < ctx->next_index; i++)
+  for (i = 0; i < ctx->buffer_next_index; i++)
     buf[i] = input_buffer_arr[i].c;
-  buf[ctx->next_index] = '\0';
+  buf[ctx->buffer_next_index] = '\0';
 
-  for (i = 0; ctx->next_index < ctx->buffer->length; i++, ctx->next_index++)
-    input_buffer_arr[i] = input_buffer_arr[ctx->next_index];
+  for (i = 0; ctx->buffer_next_index < ctx->buffer->length; i++, ctx->buffer_next_index++)
+    input_buffer_arr[i] = input_buffer_arr[ctx->buffer_next_index];
 
-  ctx->next_index = 0;
+  ctx->buffer_next_index = 0;
   ctx->buffer->length = i;
 
   return buf;
-}
-
-static input_char_t file_last_char = {
-  .c = 0, .line = 1, .column = 0, // sentinel
-};
-
-static input_char_t file_next_char(FILE *stream)
-{
-  int c = file_last_char.c;
-
-  do
-  {
-    if (c == '\n')
-    {
-      file_last_char.line++;
-      file_last_char.column = 1;
-    }
-    else
-      file_last_char.column++;
-
-    c = fgetc(stream);
-  }
-  while (c != EOF && !is_character(c));
-
-  file_last_char.c = c == EOF ? 0 : c;
-
-  return file_last_char;
 }
