@@ -560,9 +560,13 @@ static evaluate_value_t evaluate_function_call_expr(evaluate_context_t *ctx, ast
     evaluate_context_lookup_function(ctx, function_identifier);
 
   VECTOR_T(ast_node_t*) *argument_nodes = node->data_function_call_expr.arguments;
-  evaluate_value_t *argument_values = malloc(sizeof(evaluate_value_t) * argument_nodes->length);
-  if (argument_values == NULL)
-    exit_out_of_memory();
+  evaluate_value_t *argument_values = NULL;
+  if (argument_nodes->length > 0)
+  {
+    argument_values = malloc(sizeof(evaluate_value_t) * argument_nodes->length);
+    if (argument_values == NULL)
+      exit_out_of_memory();
+  }
 
   for (int i = 0; i < argument_nodes->length; i++)
   {
