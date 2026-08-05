@@ -16,7 +16,7 @@ static void vector_token_free(void *p)
 {
   token_t *token = p;
 
-  if (token->identifier != NULL)
+  if (token->type == TOKEN_IDENTIFIER)
     free(token->identifier);
   free(token->lexeme);
 }
@@ -503,6 +503,10 @@ tokenizer_result_t tokenizer_process(tokenizer_context_t *ctx)
     {
       if (token.identifier != NULL)
         free(token.identifier);
+
+      if (token.lexeme != NULL)
+        free(token.lexeme);
+
       return TOKENIZER_OOM;
     }
 
