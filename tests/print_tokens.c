@@ -10,6 +10,7 @@ int main(void)
   if (tokenizer_result != TOKENIZER_SUCCESS)
   {
     tokenizer_print_error(tokenizer, tokenizer_result);
+    tokenizer_context_free(tokenizer);
     exit(EXIT_FAILURE);
   }
   tokenizer_print_tokens(tokenizer);

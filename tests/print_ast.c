@@ -8,7 +8,10 @@ int main(void)
     exit_out_of_memory();
 
   if (tokenizer_process(tokenizer) != TOKENIZER_SUCCESS)
+  {
+    tokenizer_context_free(tokenizer);
     exit(EXIT_FAILURE);
+  }
 
   ast_node_t *root = parse(tokenizer);
   ast_node_print(root);
