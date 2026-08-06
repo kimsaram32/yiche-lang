@@ -115,28 +115,7 @@ tokenizer_result_t tokenizer_process(tokenizer_context_t *tokenizer);
  */
 
 void tokenizer_print_tokens(tokenizer_context_t *tokenizer);
-
-token_t *token_consume(tokenizer_context_t *tokenizer);
-token_t *token_peek(tokenizer_context_t *tokenizer, int n);
-
-// Return 'token' if it is non-NULL and matches one of the type(s). Otherwise,
-// throw an error.
-
-token_t *token_assert(token_t *token, token_type_t t1);
-token_t *token_assert2(token_t *token, token_type_t t1, token_type_t t2);
-token_t *token_assert3(token_t *token, token_type_t t1, token_type_t t2,
-                       token_type_t t3);
-token_t *token_assert4(token_t *token, token_type_t t1, token_type_t t2,
-                       token_type_t t3, token_type_t t4);
-
-// Return 'token' if it is non-NULL and matches one of the type(s). Otherwise,
-// return NULL.
-
-token_t *token_check(token_t *token, token_type_t t1);
-token_t *token_check2(token_t *token, token_type_t t1, token_type_t t2);
-token_t *token_check3(token_t *token, token_type_t t1, token_type_t t2,
-                      token_type_t t3);
-token_t *token_check4(token_t *token, token_type_t t1, token_type_t t2,
-                      token_type_t t3, token_type_t t4);
+token_t *tokenizer_consume(tokenizer_context_t *tokenizer);
+token_t *tokenizer_peek(tokenizer_context_t *tokenizer, int n);
 
 #endif

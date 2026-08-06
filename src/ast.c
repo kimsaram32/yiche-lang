@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "yiche.h"
 
 static void _ast_node_print(ast_node_t *node, int level);
@@ -60,12 +61,24 @@ static char *data_type_to_string(data_type_t data_type)
   } \
   while (0)
 
-static ast_node_t *ast_node_create(ast_node_type_t type)
+static void vector_node_pointer_free(void *p)
+{
+  ast_node_t **node = p;
+  ast_node_free(*node);
+}
+
+static vector_t *vector_node_pointer_create(void)
+{
+  return vector_create(sizeof(void*), 8, vector_node_pointer_free);
+}
+
+ast_node_t *ast_node_create(ast_node_type_t type)
 {
   ast_node_t *node = malloc(sizeof(ast_node_t));
   if (node == NULL)
-    exit_out_of_memory();
+    return NULL;
 
+  memset(node, 0, sizeof(ast_node_t));
   node->type = type;
 
   return node;
@@ -78,6 +91,8 @@ static ast_node_t *ast_node_create(ast_node_type_t type)
 ast_node_t *ast_node_primitive_expr_create(token_t *token)
 {
   ast_node_t *node = ast_node_create(AST_NODE_PRIMITIVE_EXPR);
+  if (node == NULL)
+    return NULL;
 
   node->data_primitive_expr.token = token;
 
@@ -107,6 +122,8 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_unary_expr_create(unary_operator_t operator, ast_node_t *operand)
 {
   ast_node_t *node = ast_node_create(AST_NODE_UNARY_EXPR);
+  if (node == NULL)
+    return NULL;
 
   node->data_unary_expr.operator = operator;
   node->data_unary_expr.operand = operand;
@@ -138,6 +155,8 @@ ast_node_t *ast_node_binary_expr_create(binary_operator_t operator, ast_node_t *
                                         ast_node_t *right_operand)
 {
   ast_node_t *node = ast_node_create(AST_NODE_BINARY_EXPR);
+  if (node == NULL)
+    return NULL;
 
   node->data_binary_expr.operator = operator;
   node->data_binary_expr.left_operand = left_operand;
@@ -196,19 +215,18 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_function_call_expr_create(token_t *token_callee)
 {
   ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_CALL_EXPR);
+  if (node == NULL)
+    return NULL;
 
   node->data_function_call_expr.token_callee = token_callee;
-  node->data_function_call_expr.arguments = vector_create(sizeof(void*), 8, destructor_noop);
+  node->data_function_call_expr.arguments = vector_node_pointer_create();
   if (node->data_function_call_expr.arguments == NULL)
-    exit_out_of_memory();
+  {
+    free(node);
+    return NULL;
+  }
 
   return node;
-}
-
-void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg)
-{
-  if (!vector_append(node->data_function_call_expr.arguments, &arg))
-    exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(function_call_expr)
@@ -225,18 +243,17 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_stmt_list_create(void)
 {
   ast_node_t *node = ast_node_create(AST_NODE_STMT_LIST);
+  if (node == NULL)
+    return NULL;
 
-  node->data_stmt_list.stmts = vector_create(sizeof(void*), 8, destructor_noop);
+  node->data_stmt_list.stmts = vector_node_pointer_create();
   if (node->data_stmt_list.stmts == NULL)
-    exit_out_of_memory();
+  {
+    free(node);
+    return NULL;
+  }
 
   return node;
-}
-
-void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt)
-{
-  if (!vector_append(node->data_stmt_list.stmts, &stmt))
-    exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(stmt_list)
@@ -252,6 +269,8 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_expr_stmt_create(ast_node_t *expr)
 {
   ast_node_t *node = ast_node_create(AST_NODE_EXPR_STMT);
+  if (node == NULL)
+    return NULL;
 
   node->data_expr_stmt.expr = expr;
 
@@ -271,6 +290,8 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_if_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
 {
   ast_node_t *node = ast_node_create(AST_NODE_IF_STMT);
+  if (node == NULL)
+    return NULL;
 
   node->data_if_stmt.cond_expr = cond_expr;
   node->data_if_stmt.stmt_list = stmt_list;
@@ -292,6 +313,8 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_while_stmt_create(ast_node_t *cond_expr, ast_node_t *stmt_list)
 {
   ast_node_t *node = ast_node_create(AST_NODE_WHILE_STMT);
+  if (node == NULL)
+    return NULL;
 
   node->data_while_stmt.cond_expr = cond_expr;
   node->data_while_stmt.stmt_list = stmt_list;
@@ -313,6 +336,8 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_return_stmt_create(ast_node_t *expr)
 {
   ast_node_t *node = ast_node_create(AST_NODE_RETURN_STMT);
+  if (node == NULL)
+    return NULL;
 
   node->data_return_stmt.expr = expr;
 
@@ -333,6 +358,8 @@ ast_node_t *ast_node_variable_decl_create(token_t *token_identifier,
                                           data_type_t data_type, ast_node_t *initializer)
 {
   ast_node_t *node = ast_node_create(AST_NODE_VARIABLE_DECL);
+  if (node == NULL)
+    return NULL;
 
   node->data_variable_decl.token_identifier = token_identifier;
   node->data_variable_decl.data_type = data_type;
@@ -358,19 +385,18 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_function_decl_create(token_t *token_identifier)
 {
   ast_node_t *node = ast_node_create(AST_NODE_FUNCTION_DECL);
+  if (node == NULL)
+    return NULL;
 
   node->data_function_decl.token_identifier = token_identifier;
-  node->data_function_decl.parameters = vector_create(sizeof(void*), 8, destructor_noop);
+  node->data_function_decl.parameters = vector_node_pointer_create();
   if (node->data_function_decl.parameters == NULL)
-    exit_out_of_memory();
+  {
+    free(node);
+    return NULL;
+  }
 
   return node;
-}
-
-void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter)
-{
-  if (!vector_append(node->data_function_decl.parameters, &parameter))
-    exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(function_decl)
@@ -390,18 +416,17 @@ AST_NODE_DEFINE_PRINT_FUNCTION_END
 ast_node_t *ast_node_program_create(void)
 {
   ast_node_t *node = ast_node_create(AST_NODE_PROGRAM);
+  if (node == NULL)
+    return NULL;
 
-  node->data_program.decls = vector_create(sizeof(void*), 8, destructor_noop);
+  node->data_program.decls = vector_node_pointer_create();
   if (node->data_program.decls == NULL)
-    exit_out_of_memory();
+  {
+    free(node);
+    return NULL;
+  }
 
   return node;
-}
-
-void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl)
-{
-  if (!vector_append(node->data_program.decls, &decl))
-    exit_out_of_memory();
 }
 
 AST_NODE_DEFINE_PRINT_FUNCTION(program)
@@ -455,4 +480,55 @@ void _ast_node_print(ast_node_t *node, int level)
       ast_node_program_print(node, level);
       break;
   }
+}
+
+void ast_node_free(ast_node_t *node)
+{
+  if (node == NULL)
+    return;
+
+  switch (node->type)
+  {
+    case AST_NODE_PRIMITIVE_EXPR:
+      break;
+    case AST_NODE_UNARY_EXPR:
+      ast_node_free(node->data_unary_expr.operand);
+      break;
+    case AST_NODE_BINARY_EXPR:
+      ast_node_free(node->data_binary_expr.left_operand);
+      ast_node_free(node->data_binary_expr.right_operand);
+      break;
+    case AST_NODE_FUNCTION_CALL_EXPR:
+      vector_free(node->data_function_call_expr.arguments);
+      break;
+    case AST_NODE_STMT_LIST:
+      vector_free(node->data_stmt_list.stmts);
+      break;
+    case AST_NODE_EXPR_STMT:
+      ast_node_free(node->data_expr_stmt.expr);
+      break;
+    case AST_NODE_IF_STMT:
+      ast_node_free(node->data_if_stmt.cond_expr);
+      ast_node_free(node->data_if_stmt.stmt_list);
+      break;
+    case AST_NODE_WHILE_STMT:
+      ast_node_free(node->data_while_stmt.cond_expr);
+      ast_node_free(node->data_while_stmt.stmt_list);
+      break;
+    case AST_NODE_RETURN_STMT:
+      ast_node_free(node->data_return_stmt.expr);
+      break;
+    case AST_NODE_VARIABLE_DECL:
+      ast_node_free(node->data_variable_decl.initializer);
+      break;
+    case AST_NODE_FUNCTION_DECL:
+      vector_free(node->data_function_decl.parameters);
+      ast_node_free(node->data_function_decl.body);
+      break;
+    case AST_NODE_PROGRAM:
+      vector_free(node->data_program.decls);
+      break;
+  }
+
+  free(node);
 }

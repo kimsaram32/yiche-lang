@@ -20,13 +20,25 @@ int main(void)
   tokenizer_print_tokens(tokenizer);
 
   printf("PARSING\n");
-  ast_node_t *root = parse(tokenizer);
+
+  ast_node_t *root = NULL;
+  parser_context_t *parser = parser_context_create(tokenizer);
+
+  parser_result_t parser_result = parser_parse(parser, &root);
+  if (parser_result != PARSER_SUCCESS)
+  {
+    parser_print_error(parser, parser_result);
+    parser_context_free(parser);
+    tokenizer_context_free(tokenizer);
+    exit(EXIT_FAILURE);
+  }
   ast_node_print(root);
 
   printf("EVALUATING\n");
   evaluate_value_t evaluator_result = evaluate(root);
   printf("returned %d\n", evaluator_result.value_int);
 
+  parser_context_free(parser);
   tokenizer_context_free(tokenizer);
 
   return 0;

@@ -6,7 +6,7 @@
 /*
  * Adding a new node type:
  * - Add definitions in ast.c and ast.h
- * - Update 'ast_node_print' in ast.c
+ * - Update 'ast_node_print' and 'ast_node_free' in ast.c
  */
 
 typedef enum {
@@ -41,6 +41,7 @@ typedef struct ast_node_t ast_node_t;
 
 typedef struct
 {
+  // reference
   token_t *token;
 }
 ast_node_primitive_expr_t;
@@ -119,7 +120,6 @@ typedef struct
 ast_node_function_call_expr_t;
 
 ast_node_t *ast_node_function_call_expr_create(token_t *token_callee);
-void ast_node_function_call_expr_append_argument(ast_node_t *node, ast_node_t *arg);
 
 /*
  * stmt_list
@@ -132,7 +132,6 @@ typedef struct
 ast_node_stmt_list_t;
 
 ast_node_t *ast_node_stmt_list_create(void);
-void ast_node_stmt_list_append_stmt(ast_node_t *node, ast_node_t *stmt);
 
 /*
  * expr_stmt
@@ -192,7 +191,7 @@ typedef struct
 {
   token_t *token_identifier;
   data_type_t data_type;
-  ast_node_t *initializer; // expression
+  ast_node_t *initializer; // expression (optional)
 }
 ast_node_variable_decl_t;
 
@@ -213,7 +212,6 @@ typedef struct
 ast_node_function_decl_t;
 
 ast_node_t *ast_node_function_decl_create(token_t *token_identifier);
-void ast_node_function_decl_append_parameter(ast_node_t *node, ast_node_t *parameter);
 
 /*
  * program
@@ -226,12 +224,19 @@ typedef struct
 ast_node_program_t;
 
 ast_node_t *ast_node_program_create(void);
-void ast_node_program_append_decl(ast_node_t *node, ast_node_t *decl);
 
 /*
  * node definition
  */
 
+// Member of type 'ast_node_t*':
+// - Publicly: It is a valid pointer to a node unless it is declared to be
+//   optional.
+// - Internally (parser.c): it is either NULL or a valid pointer to a node.
+// - If it is non-NULL, it owns the node.
+//
+// Member of type 'VECTOR_T(ast_node_t*)':
+// - Each element is non-NULL and owns the node it points to.
 typedef struct ast_node_t
 {
   ast_node_type_t type;
@@ -254,8 +259,10 @@ typedef struct ast_node_t
 ast_node_t;
 
 /*
- * Printing
+ * Node functions
  */
+
+void ast_node_free(ast_node_t *node);
 
 void ast_node_print(ast_node_t *node);
 

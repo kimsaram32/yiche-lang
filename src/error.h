@@ -11,9 +11,6 @@
 
 NORETURN void exit_out_of_memory(void);
 
-NORETURN void exit_parsing_error_unexpected_token(token_t *token);
-NORETURN void exit_parsing_error_no_tokens(void);
-
 #define exit_runtime_error(...) exit_with_error("runtime error: " __VA_ARGS__)
 
 #endif
