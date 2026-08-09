@@ -29,6 +29,7 @@ int main(void)
   evaluate_value_t result = evaluate(root);
   printf("returned %d\n", result.value_int);
 
+  ast_node_free(root);
   parser_context_free(parser);
   tokenizer_context_free(tokenizer);
   return 0;

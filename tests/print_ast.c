@@ -29,6 +29,7 @@ int main(void)
 
   ast_node_print(root);
 
+  ast_node_free(root);
   parser_context_free(parser);
   tokenizer_context_free(tokenizer);
   return 0;

@@ -23,6 +23,8 @@ int main(void)
 
   ast_node_t *root = NULL;
   parser_context_t *parser = parser_context_create(tokenizer);
+  if (parser == NULL)
+    exit_out_of_memory();
 
   parser_result_t parser_result = parser_parse(parser, &root);
   if (parser_result != PARSER_SUCCESS)
@@ -38,6 +40,7 @@ int main(void)
   evaluate_value_t evaluator_result = evaluate(root);
   printf("returned %d\n", evaluator_result.value_int);
 
+  ast_node_free(root);
   parser_context_free(parser);
   tokenizer_context_free(tokenizer);
 
