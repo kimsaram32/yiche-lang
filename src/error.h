@@ -11,6 +11,4 @@
 
 NORETURN void exit_out_of_memory(void);
 
-#define exit_runtime_error(...) exit_with_error("runtime error: " __VA_ARGS__)
-
 #endif
