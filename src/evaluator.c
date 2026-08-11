@@ -65,11 +65,11 @@ static eval_result_internal_t _result_runtime_error(const char *format, ...)
   int length = vsnprintf(NULL, 0, format, args);
   va_end(args);
 
-  va_start(args, format);
   char *buf = malloc(sizeof(char) * (length + 1));
   if (buf == NULL)
     return RESULT_OOM;
 
+  va_start(args, format);
   vsnprintf(buf, length + 1, format, args);
   va_end(args);
 
