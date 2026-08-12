@@ -13,24 +13,25 @@ An *entity* is either a variable or a function.
 ### Scopes of declarations
 
 A declaration has its associated *scope*, which determines the portion of the
-program where the declaration takes effect. A declaration is *visible* at a
-point of execution if and only if there is a declaration using the identifier at
-that point.
+program in which the declaration takes effect. A declaration is *potentially
+visible* at a point if the point lies within the scope of the declaration. A
+declaration is *visible* at a point if it is potentially visible, and there are
+no potentially visible declarations appearing below it. When a declaration is
+potentially visible but not visible, it is *hidden*.
 
-TODO An identifier *resolves* to an entity associated by the nearest visible
-declaration.
+An identifier occuring in an expression *resolves* to an entity declared by the
+visible declaration with the identifier at that point.
 
-A declaration has a *global scope* if and only if the scope of such declaration is
+Two declarations have the same scope if their scopes end at the same point.
+
+There cannot exist two declarations with the same identifier and the same scope,
+except the case where one of them is a built-in function.
+
+A declaration has a *global scope* if the scope of such declaration is
 from the end of the declaration to the end of the source text.
 
-A declaration has a *block scope* if and only if the scope of such declaration is
+A declaration has a *block scope* if the scope of such declaration is
 from the end of the declaration to the nearest "}".
-
-Two declarations have the same scope if and only if their scopes end at the same
-point.
-
-TODO(built-in functions) There cannot exist two declarations with the same
-identifier and the same scope,
 
 The scope of a variable declaration is determined as follows:
 
@@ -40,6 +41,16 @@ The scope of a variable declaration is determined as follows:
 3. Otherwise, it has a global scope.
 
 A function declaration has a global scope.
+
+### Program execution
+
+Program execution proceeds as follows:
+
+1. Built-in functions are implicitly declared. The list of all built-in
+   functions is discussed below, in the "Built-in functions" section.
+2. Top-level declarations are executed in top-to-bottom order.
+3. The function named `main` is called with no arguments. If no such function
+   exists, a runtime error occurs.
 
 ## Lexical Structure
 
